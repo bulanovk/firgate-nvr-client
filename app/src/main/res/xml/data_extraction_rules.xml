@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The profile of the server is a plain preference: it is backed up, so the settings of the user
+    survive the reinstall of the app. The session cookie and the credentials are encrypted with a
+    key of the Android Keystore, and that key dies with the app: a backup of them would be a
+    ciphertext that nobody can read. They are left out of the backup on purpose.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="frigate_server.xml" />
+        <exclude domain="sharedpref" path="frigate_secure_sessions.xml" />
+        <exclude domain="sharedpref" path="frigate_secure_credentials.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="frigate_server.xml" />
+        <exclude domain="sharedpref" path="frigate_secure_sessions.xml" />
+        <exclude domain="sharedpref" path="frigate_secure_credentials.xml" />
+    </device-transfer>
+</data-extraction-rules>

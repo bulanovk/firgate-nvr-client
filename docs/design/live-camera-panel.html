@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Frigate · Панель live-камеры</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;color:#f4f4f5;background:#111214;font-size:16px;--muted:#a7a9ae;--line:#34363b;--accent:#fb923c}*{box-sizing:border-box}body{margin:0}button,select{font:inherit;color:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}.studio{max-width:1140px;margin:auto;padding:32px 24px;display:flex;flex-direction:column}.eyebrow{color:var(--accent);font-size:11px;letter-spacing:.16em;font-weight:700}h1{font-size:clamp(24px,4vw,36px);font-weight:600;letter-spacing:-.04em;margin:10px 0}p{color:var(--muted);line-height:1.55}.intro{max-width:720px}.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:24px 0}.controls label{font-size:13px;color:#c5c7cb;display:flex;gap:8px;align-items:center;flex-wrap:wrap}select,.control{background:#212226;border:1px solid #414349;border-radius:8px;padding:10px;min-height:48px}.control[aria-pressed=true]{border-color:var(--accent);background:#38281d}.workbench{display:flex;align-items:flex-start;gap:40px;flex-wrap:wrap}.device{width:360px;max-width:100%;flex-shrink:0;border:1px solid #414349;border-radius:28px;background:#000;overflow:hidden;box-shadow:0 24px 90px #0006}.device.wide{width:720px;max-width:none}.statusbar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;color:#d5d6d8}.app{height:750px;display:flex;flex-direction:column;position:relative;overflow:hidden}.notes{max-width:320px;font-size:13px;padding-top:16px}.notes h2{font-size:16px;font-weight:550;margin:0 0 8px}.notes p{margin:0 0 20px}.note-rule{border-top:1px solid var(--line);padding-top:20px}.zoom-readout{font-variant-numeric:tabular-nums;background:#212226;border:1px solid #414349;border-radius:8px;padding:10px 12px;font-size:12px;color:#d7d8db;margin-bottom:20px}.zoom-readout b{color:#fff;font-weight:600}.notice{font-size:12px;color:var(--muted);margin-top:16px;max-width:900px}svg.icon{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+[hidden]{display:none!important}
+
+/* --- экран камеры --- */
+.camera-header{height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px;background:#000}.header-group{display:flex;align-items:center;gap:6px}.header-right{gap:3px}.header-button{border:0;background:#26282d;color:#e9e9eb;min-width:36px;min-height:36px;display:inline-grid;place-items:center;border-radius:8px;padding:0}.header-button.ghost{background:transparent}.header-button.ghost:hover{background:#25272b}.header-button.filled{background:linear-gradient(135deg,#6b7280,#4b5563)}.header-button.is-off{opacity:.5}.header-button:hover{background:#33363c}
+/* Две раскладки шапки, как в PWA: узкий экран (телефон) и широкий (планшет/десктоп). */
+.wide-only{display:none}.live-screen.wide-layout .wide-only{display:inline-grid}
+.live-screen.wide-layout span.wide-only{display:inline-flex}
+.live-screen.wide-layout .dropdown.wide-only{display:block}
+.narrow-only{display:none}.live-screen:not(.wide-layout) .narrow-only{display:flex}
+.header-label{font-size:13px;padding:0 6px 0 2px;color:#e9e9eb;white-space:nowrap}
+.fs-only{display:none}.live-screen.fullscreen .fs-only{display:inline-grid}
+.live-screen.fullscreen #fullscreen{display:none}
+.live-screen.fullscreen #features{display:none}
+.live-screen.fullscreen .camera-header{position:absolute;right:8px;top:4px;z-index:6;background:transparent;height:auto;flex:0 0 auto;padding:0}
+.live-screen.fullscreen #header-left{display:none}
+.live-screen.fullscreen #header-right{background:#17181bcc;border-radius:10px;padding:4px;gap:3px}
+/* Панель настроек камеры: на узком экране это лист снизу (Drawer в PWA). */
+.sheet-section{padding:6px 16px 2px;display:flex;flex-direction:column;gap:2px}
+.sheet-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;font-size:14px;color:#f4f4f5}
+.sheet-switch.is-off{opacity:.45}.switch{width:38px;height:22px;border-radius:11px;background:#3a3d43;position:relative;flex:0 0 38px}
+.switch.is-on{background:#fb923c}.switch.is-on::after{content:"";position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff}
+.switch:not(.is-on)::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#c5c7cb}
+.sheet-label{font-size:12px;color:#8b8f96;margin-top:8px}
+.sheet-select,.dropdown-select{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:40px;padding:0 12px;border:1px solid #3a3d43;border-radius:8px;background:#212226;color:#f4f4f5;font-size:14px;text-align:left}
+.sheet-select .chevron,.dropdown-select .chevron{color:#8b8f96;font-size:11px;line-height:1}
+.select-options{display:flex;flex-direction:column;margin-top:6px;border:1px solid #3a3d43;border-radius:8px;overflow:hidden;background:#212226}
+.select-option{display:flex;align-items:center;width:100%;min-height:38px;padding:0 12px;border:0;background:transparent;color:#f4f4f5;font-size:14px;text-align:left}
+.select-option.is-active{color:#fb923c}
+/* Недоступный вариант остаётся в списке, но приглушён и объясняет, почему его нельзя выбрать. */
+.select-option.is-off{opacity:.5;cursor:default}
+.select-option .option-text{display:flex;flex-direction:column;gap:2px}
+.select-option .option-reason{font-size:11px;color:#8b8f96}
+.sheet-actions{display:flex;gap:8px;margin:6px 0 2px}
+.sheet-button{flex:1;border:1px solid #414349;background:#212226;color:#f4f4f5;border-radius:8px;min-height:44px;font-size:14px}
+.sheet-button.is-off{opacity:.45}
+/* На широком экране шестерёнка открывает выпадающее меню (DropdownMenu в PWA). */
+.dropdown{position:absolute;right:8px;top:52px;z-index:9;width:320px;max-width:calc(100% - 16px);max-height:86%;overflow-y:auto;touch-action:pan-y;background:#17181b;border:1px solid #414349;border-radius:10px;padding:8px 0;box-shadow:0 18px 50px #0009}
+.dropdown-label{font-size:12px;color:#8b8f96;padding:6px 14px 2px}
+
+.dropdown-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:36px;padding:0 14px;font-size:14px;color:#f4f4f5}
+.dropdown-switch.is-off{opacity:.45}
+.dropdown-actions{display:flex;gap:8px;padding:2px 14px 6px}
+.dropdown-button{flex:1;border:1px solid #414349;background:#212226;color:#f4f4f5;border-radius:8px;min-height:40px;font-size:13px}
+.dropdown-button.is-off{opacity:.45}
+/* PTZ-панель PWA: стрелки, зум и пресеты. В приложении PTZ нет — блок приглушён. */
+.ptz{position:absolute;left:0;right:0;bottom:10%;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;opacity:.45}
+.ptz-button{width:44px;height:44px;border:0;border-radius:10px;background:#26282d;color:#e9e9eb;display:inline-grid;place-items:center}.sheet-scrim{position:absolute;inset:0;background:#000000a6;z-index:8}.sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;max-height:72%;background:#17181b;border-top-left-radius:16px;border-top-right-radius:16px;padding:6px 0 14px;display:flex;flex-direction:column}.sheet-body{overflow-y:auto;min-height:0;flex:1 1 auto;touch-action:pan-y}.sheet-grab{padding:2px 0 8px;cursor:grab;touch-action:none;flex:0 0 auto}.sheet-handle{width:36px;height:4px;border-radius:2px;background:#3a3d43;margin:2px auto 10px}.sheet-title{font-size:11px;color:#8b8f96;padding:0 16px 6px;letter-spacing:.1em;text-transform:uppercase}.sheet-row{display:flex;align-items:center;gap:14px;background:transparent;border:0;color:#f4f4f5;font-size:14px;min-height:48px;padding:0 16px;text-align:left;width:100%}.sheet-row.is-off{opacity:.45}.sheet-icon{width:22px;height:22px;display:inline-grid;place-items:center}.toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:#17181bdd;border:1px solid #414349;border-radius:8px;padding:8px 12px;font-size:12px;color:#fff;z-index:6}.stage{flex:1;min-height:0;background:#000;display:grid;place-items:center;overflow:hidden;position:relative}.picture{position:relative;overflow:hidden;background:#000;transform-origin:50% 50%;touch-action:none}.picture .scene{width:100%;height:100%;display:block;object-fit:cover}.picture.tracking{outline:3px solid #ea580c;outline-offset:-3px}
+.chip{background:linear-gradient(135deg,#6b7280,#4b5563);border-radius:6px;color:#fff;font-size:11px;padding:5px 7px;display:flex;align-items:center;gap:5px;white-space:nowrap}.chip .icon{width:16px;height:16px}.objects-chip{position:absolute;left:8px;top:8px}.right-chip{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:8px;max-width:60%}.name-chip{background:#dc4b5563;border-radius:6px;color:#fff;font-size:11px;padding:4px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.motion-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;flex:0 0 8px;animation:pulse 1.6s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+.state-card{position:absolute;inset:0;background:#18181b;display:grid;place-items:center}.state-card>div{background:#aa18181b;border-radius:8px;padding:12px;display:flex;align-items:center;gap:8px;color:#fff;font-size:12px}.state-card.offline{background:#80000000}.error-bar{position:absolute;left:0;right:0;bottom:0;background:#dd18181b;display:flex;align-items:center;gap:8px;padding:6px 8px;color:#fff;font-size:12px}.error-bar button{margin-left:auto;background:transparent;border:0;color:#fff;min-height:48px;padding:0 10px;text-decoration:underline}
+
+/* --- экран архива --- */
+.archive{display:flex;flex-direction:column;height:100%;background:#0b0c0e}.archive-header{height:48px;flex:0 0 48px;display:flex;align-items:center;gap:8px;padding:0 8px}.archive-header .route{min-width:0;flex:1}.archive-header .route strong{display:block;font-size:15px;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.archive-header .route small{display:block;font-size:11px;color:var(--muted)}.archive-stage{flex:1;min-height:0;background:#000;display:grid;place-items:center;position:relative;overflow:hidden}.archive-controls{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;pointer-events:none}.archive-controls>div{pointer-events:auto;display:flex;align-items:center;gap:4px;background:#17181bdd;backdrop-filter:blur(6px);border-radius:10px;padding:4px}.archive-controls button{border:0;background:transparent;color:#e9e9eb;min-width:44px;min-height:44px;display:inline-grid;place-items:center;border-radius:8px}.archive-controls button:hover{background:#2b2d33}.archive-controls .primary{background:#f4f4f5;color:#17191d}.archive-controls .rate{font-size:12px;font-weight:600;padding:0 8px}.archive-timeline{flex:0 0 64px;border-top:1px solid #26282c;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.archive-timeline .strip{position:relative;height:26px;border-radius:4px;background:repeating-linear-gradient(90deg,#2a2d32 0 6px,#22252a 6px 9px)}.archive-timeline .strip .motion{position:absolute;top:0;bottom:0;background:#ef444455}.archive-timeline .strip .playhead{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ef4444}.archive-timeline .labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.fullscreen-actions{position:absolute;right:8px;top:4px;z-index:5;display:flex;align-items:center;gap:3px}
+
+@media(prefers-reduced-motion:reduce){.motion-dot{animation:none}}
+/* На телефоне макет занимает всю ширину экрана (360 dp), заметки уходят под макет:
+   страница не сжимается под себя, поэтому ширина 360 dp = ширина картинки телефона. */
+@media(max-width:480px){.studio{padding:16px 0 32px}.workbench{display:contents}.device{order:-1;border-left:0;border-right:0;border-radius:0}.notes{padding:0 16px;max-width:none;margin-top:24px}}
+</style>
+</head>
+<body>
+<main class="studio">
+<div class="intro"><div class="eyebrow">FRIGATE / DESIGN PREVIEW</div><h1>Панель камеры. Кадр целиком.</h1><p>Вместо карточки 16:9 под заголовком — экран камеры: шапка 48&nbsp;dp, видео на весь экран по реальному аспекту, щипок двумя пальцами приближает участок кадра. Шапка повторяет обе раскладки PWA: на узком экране и на широком. Тот же зум работает в архиве: это свойство плеера, а не отдельный экран.</p></div>
+<div class="controls" aria-label="Настройки демонстрации">
+  <label>Экран <select id="screen"><option value="live" selected>Панель камеры</option><option value="archive">Архив · запись</option></select></label>
+  <label>Камера <select id="camera"><option value="gate">Вход · 16:9 · 4K</option><option value="yard">Двор · 32:9 · 4K</option><option value="side">Боковой вход · 8:9 · 2K</option></select></label>
+  <label>Состояние <select id="mode"><option value="live">Live</option><option value="motion">Движение + объект</option><option value="tracking">Трекинг</option><option value="offline">Оффлайн</option><option value="disabled">Отключена</option><option value="failed">Ошибка видео</option></select></label>
+  <button class="control" id="width" aria-pressed="false">Широкий экран</button>
+  <button class="control" id="reset">Сбросить демо</button>
+</div>
+<div class="workbench">
+<section class="device" aria-label="Макет экрана Android">
+  <div class="statusbar"><span>21:47</span><span>▰ &nbsp; 64%</span></div>
+  <div class="app">
+    <!-- Экран 1: панель камеры -->
+    <section id="live-screen" class="live-screen" aria-label="Панель live-камеры" style="display:flex;flex-direction:column;height:100%;position:relative">
+      <header class="camera-header" id="live-header">
+        <div class="header-group" id="header-left">
+          <button class="header-button ghost" id="back" aria-label="Назад к камерам"></button>
+          <span class="header-label wide-only">Назад</span>
+          <button class="header-button ghost" id="history" aria-label="История"></button>
+          <span class="header-label wide-only">История</span>
+        </div>
+        <div class="header-group header-right" id="header-right">
+          <button class="header-button filled fs-only" id="fs-back" aria-label="Назад к камерам"></button>
+          <button class="header-button fs-only" id="fs-fullscreen" aria-label="Выйти из полного экрана"></button>
+          <button class="header-button" id="fullscreen" aria-label="Полный экран"></button>
+          <button class="header-button is-off" id="pip" aria-label="Картинка в картинке" disabled></button>
+          <button class="header-button is-off" id="talk" aria-label="Двусторонняя связь" disabled></button>
+          <button class="header-button is-off" id="sound" aria-label="Звук" disabled></button>
+          <button class="header-button is-off wide-only" id="event" aria-label="Ручная запись" disabled></button>
+          <button class="header-button wide-only" id="shot" aria-label="Сохранить кадр"></button>
+          <button class="header-button" id="features" aria-label="Настройки камеры"></button>
+        </div>
+      </header>
+      <div class="stage" id="live-stage">
+        <div class="picture" id="live-picture">
+          <div id="live-scene" style="width:100%;height:100%"></div>
+          <span class="chip objects-chip" id="live-objects"></span>
+          <span class="right-chip" id="live-right"><span class="name-chip" id="live-name"></span><span class="motion-dot" id="live-motion" role="img" aria-label="Движение"></span></span>
+          <div class="state-card" id="live-state" hidden><div><span id="live-state-icon"></span><span id="live-state-text"></span></div></div>
+          <div class="error-bar" id="live-error" hidden><span>Live video unavailable</span><button id="live-retry">Retry</button></div>
+        </div>
+        <div class="ptz" id="live-ptz">
+          <button class="ptz-button" id="ptz-left" aria-label="Влево"></button>
+          <button class="ptz-button" id="ptz-up" aria-label="Вверх"></button>
+          <button class="ptz-button" id="ptz-down" aria-label="Вниз"></button>
+          <button class="ptz-button" id="ptz-right" aria-label="Вправо"></button>
+          <button class="ptz-button" id="ptz-zoom-in" aria-label="Приблизить"></button>
+          <button class="ptz-button" id="ptz-zoom-out" aria-label="Отдалить"></button>
+          <button class="ptz-button" id="ptz-presets" aria-label="Предустановки"></button>
+        </div>
+      </div>
+      <div class="sheet-scrim" id="sheet-scrim" hidden></div>
+      <div class="sheet narrow-only" id="camera-drawer" hidden>
+        <div class="sheet-grab" id="sheet-grab">
+          <div class="sheet-handle"></div>
+          <div class="sheet-title">Настройки камеры</div>
+        </div>
+        <div class="sheet-body" id="sheet-body">
+        <div class="sheet-section">
+          <div class="sheet-switch"><span>Камера</span><span class="switch is-on"></span></div>
+          <div class="sheet-switch"><span>Детекция объектов</span><span class="switch is-on"></span></div>
+          <div class="sheet-switch"><span>Запись</span><span class="switch is-on"></span></div>
+          <div class="sheet-switch"><span>Снимки</span><span class="switch is-on"></span></div>
+          <div class="sheet-switch is-off"><span>Аудиодетекция</span><span class="switch"></span></div>
+          <div class="sheet-switch is-off"><span>Транскрипция</span><span class="switch"></span></div>
+          <div class="sheet-switch is-off"><span>Автотрекинг</span><span class="switch"></span></div>
+        </div>
+        <div class="sheet-section">
+          <div class="sheet-label">Поток</div>
+          <button class="sheet-select" id="sheet-stream" aria-expanded="false" aria-label="Поток камеры"><span id="sheet-stream-value">Вход · 2K</span><span class="chevron" aria-hidden="true">▾</span></button>
+          <div class="select-options" id="sheet-stream-options" hidden>
+            <button class="select-option" id="sheet-stream-auto">Авто</button>
+            <button class="select-option is-active" id="sheet-stream-2k">Вход · 2K</button>
+            <button class="select-option" id="sheet-stream-4k">Вход · 4K</button>
+            <button class="select-option" id="sheet-stream-720">Вход · 720p</button>
+          </div>
+          <div class="sheet-label">Режим</div>
+          <button class="sheet-select" id="sheet-engine" aria-expanded="false" aria-label="Режим потока"><span id="sheet-engine-value">MSE</span><span class="chevron" aria-hidden="true">▾</span></button>
+          <div class="select-options" id="sheet-engine-options" hidden>
+            <button class="select-option is-active" id="sheet-engine-mse">MSE</button>
+            <button class="select-option is-off" id="sheet-engine-webrtc" disabled>
+              <span class="option-text"><span>WebRTC</span><span class="option-reason">В приложении пока нет пути WebRTC</span></span>
+            </button>
+          </div>
+          <div class="sheet-switch is-off"><span>Низкая полоса</span><span class="switch"></span></div>
+        </div>
+        <div class="sheet-section">
+          <div class="sheet-label">Ручная запись</div>
+          <div class="sheet-actions">
+            <button class="sheet-button" id="sheet-shot">Сделать снимок</button>
+            <button class="sheet-button is-off" id="sheet-event" disabled>Начать запись</button>
+          </div>
+        </div>
+        <div class="sheet-section">
+          <div class="sheet-switch is-off"><span>Воспроизведение в фоне</span><span class="switch"></span></div>
+          <div class="sheet-switch is-off"><span>Статистика</span><span class="switch"></span></div>
+          <div class="sheet-switch is-off"><span>Отладочный вид</span><span class="switch"></span></div>
+        </div>
+        </div>
+      </div>
+      <div class="dropdown wide-only" id="features-menu" hidden>
+        <div class="dropdown-label">Камера</div>
+        <div class="dropdown-switch"><span>Камера</span><span class="switch is-on"></span></div>
+        <div class="dropdown-switch"><span>Детекция объектов</span><span class="switch is-on"></span></div>
+        <div class="dropdown-switch"><span>Запись</span><span class="switch is-on"></span></div>
+        <div class="dropdown-switch"><span>Снимки</span><span class="switch is-on"></span></div>
+        <div class="dropdown-switch is-off"><span>Аудиодетекция</span><span class="switch"></span></div>
+        <div class="dropdown-switch is-off"><span>Транскрипция</span><span class="switch"></span></div>
+        <div class="dropdown-switch is-off"><span>Автотрекинг</span><span class="switch"></span></div>
+        <div class="dropdown-label">Поток</div>
+        <button class="dropdown-select" id="menu-stream" aria-expanded="false" aria-label="Поток камеры"><span id="menu-stream-value">Вход · 2K</span><span class="chevron" aria-hidden="true">▾</span></button>
+        <div class="select-options" id="menu-stream-options" hidden>
+          <button class="select-option" id="menu-stream-auto">Авто</button>
+          <button class="select-option is-active" id="menu-stream-2k">Вход · 2K</button>
+          <button class="select-option" id="menu-stream-4k">Вход · 4K</button>
+          <button class="select-option" id="menu-stream-720">Вход · 720p</button>
+        </div>
+        <div class="dropdown-label">Режим</div>
+        <button class="dropdown-select" id="menu-engine" aria-expanded="false" aria-label="Режим потока"><span id="menu-engine-value">MSE</span><span class="chevron" aria-hidden="true">▾</span></button>
+        <div class="select-options" id="menu-engine-options" hidden>
+          <button class="select-option is-active" id="menu-engine-mse">MSE</button>
+          <button class="select-option is-off" id="menu-engine-webrtc" disabled>
+            <span class="option-text"><span>WebRTC</span><span class="option-reason">В приложении пока нет пути WebRTC</span></span>
+          </button>
+        </div>
+        <div class="dropdown-switch is-off"><span>Низкая полоса</span><span class="switch"></span></div>
+        <div class="dropdown-label">Ручная запись</div>
+        <div class="dropdown-actions">
+          <button class="dropdown-button" id="menu-shot">Сделать снимок</button>
+          <button class="dropdown-button is-off" id="menu-event" disabled>Начать запись</button>
+        </div>
+        <div class="dropdown-switch is-off"><span>Воспроизведение в фоне</span><span class="switch"></span></div>
+        <div class="dropdown-switch is-off"><span>Статистика</span><span class="switch"></span></div>
+        <div class="dropdown-switch is-off"><span>Отладочный вид</span><span class="switch"></span></div>
+      </div>
+      <div class="toast" id="live-toast" hidden>Кадр сохранён</div>
+    </section>
+    <!-- Экран 2: архив -->
+    <section id="archive-screen" class="archive" aria-label="Архив: запись события" hidden>
+      <header class="archive-header">
+        <button class="header-button" id="archive-back" aria-label="Назад к Live"></button>
+        <div class="route"><strong id="archive-camera">Вход</strong><small>Запись события · сегодня 21:41</small></div>
+        <button class="header-button" id="archive-live" aria-label="Открыть live камеры"></button>
+      </header>
+      <div class="archive-stage" id="archive-stage">
+        <div class="picture" id="archive-picture">
+          <div id="archive-scene" style="width:100%;height:100%"></div>
+          <span class="chip objects-chip"><span class="icon" id="archive-object"></span>Человек</span>
+        </div>
+        <div class="archive-controls" id="archive-controls"><div>
+          <button id="archive-mute" aria-label="Звук"></button>
+          <button id="archive-back10" aria-label="Назад на 10 секунд"></button>
+          <button id="archive-play" class="primary" aria-label="Пауза"></button>
+          <button id="archive-forward10" aria-label="Вперёд на 10 секунд"></button>
+          <button id="archive-speed" class="rate" aria-label="Скорость">1×</button>
+          <button id="archive-fullscreen" aria-label="Полный экран"></button>
+        </div></div>
+      </div>
+      <div class="archive-timeline">
+        <div class="strip"><span class="motion" style="left:18%;width:26%"></span><span class="motion" style="left:58%;width:14%"></span><span class="playhead" style="left:44%"></span></div>
+        <div class="labels"><span>21:41:00</span><span>21:41:30</span><span>21:42:00</span></div>
+      </div>
+    </section>
+  </div>
+</section>
+<aside class="notes" id="notes">
+  <div class="zoom-readout">Масштаб кадра: <b id="zoom-value">1.0×</b><br>Предел для этого потока: <b id="zoom-limit">10.0×</b></div>
+  <h2>Две раскладки шапки — как в PWA</h2>
+  <p>В PWA шапка экрана камеры зависит от ширины. <b>На узком экране</b> (телефон) слева назад и история, справа полный экран, картинка в картинке, микрофон, звук и шестерёнка; шестерёнка открывает <b>лист настроек камеры снизу</b> — тумблеры камеры, поток, режим, низкая полоса, ручная запись, статистика. Лист закрывается <b>свайпом вниз</b> — как в PWA, где это ящик снизу.</p>
+  <p><b>На широком экране</b> (планшет, десктоп) подписи «Назад» и «История» появляются, шестерёнка открывает <b>выпадающее меню</b> с теми же настройками, а в шапке остаётся только то, что есть в приложении: полный экран, картинка в картинке, микрофон, звук, ручная запись, снимок кадра и шестерёнка. В PWA на широком экране тумблеры камеры стоят прямо в шапке, но там администратор, а в приложении этих действий нет — поэтому они лежат в меню шестерёнки, а не теснят шапку.</p>
+  <p>Переключатель «Широкий экран» над макетом показывает вторую раскладку; на телефоне она показана в масштабе, чтобы поместиться на экране целиком. Третье поведение PWA — телефон в альбомной ориентации: шапка становится вертикальной рейкой 48&nbsp;dp слева, кнопки в столбик.</p>
+  <p>Сейчас работают назад, история и полный экран; снимок кадра — из меню настроек, как в PWA на узком экране. Остальные действия приглушены: картинка в картинке, двусторонняя связь, звук, ручная запись, тумблеры камеры и PTZ в приложении ещё нет.</p>
+  <p>В полном экране шапка уходит с экрана и становится плавающим рядом справа — тоже как в PWA. Шестерёнки в полном экране нет: в PWA на узком экране настройки камеры в полноэкранном режиме недоступны.</p>
+  <h2>PTZ-панель под кадром</h2>
+  <p>В PWA под кадром камеры с ONVIF-PTZ стоит панель: стрелки, зум и пресеты. В приложении PTZ нет, поэтому панель приглушена и остаётся на своём месте — как в PWA, она не масштабируется вместе с картинкой.</p>
+  <h2>Видео занимает весь экран</h2>
+  <p>Шапка 48&nbsp;dp, под ней — кадр по реальному аспекту камеры, чёрные поля сверху и снизу. Имя камеры в панели не показывается: в PWA оно видно только когда камера оффлайн или отключена.</p>
+  <h2>Зум — свойство плеера</h2>
+  <p>Щипок приближает участок кадра вокруг точки щипка, протяжка двигает увеличенный кадр, двойной тап возвращает 1×. Тот же зум — в архиве, и там панель управления остаётся на месте: масштабируется только картинка.</p>
+  <h2>Предел зависит от потока</h2>
+  <p>Предел считается из ширины кадра и ширины экрана: не больше трёх экранных пикселей на один исходный. Для 4K на этом телефоне — 10× (дальше только каша интерполяции), для 2K — около 7,4×; точное значение для выбранной камеры видно в счётчике выше. Деталей зум не добавляет.</p>
+  <div class="note-rule">
+    <h2>Попробуйте</h2>
+    <p>Переключатель «Состояние» показывает движение, трекинг, оффлайн, отключённую камеру и ошибку видео. Переключатель «Камера» меняет аспект кадра.</p>
+    <p>На телефоне: щипок двумя пальцами по кадру, колесо мыши на компьютере, двойной тап — сброс.</p>
+    <p>Все кадры — синтетические иллюстрации. Реальное видео, API и сервер не подключены.</p>
+  </div>
+</aside>
+</div>
+<p class="notice">Интерактивный макет, не видеоплеер: кадр — синтетическая иллюстрация, воспроизведение не подключено. Реальный поток с камеры, звук и API Frigate не используются. Предел зума в макете считается в физических пикселях экрана: 360 dp × 3 = 1080 px — ширина экрана телефона (SM-S901E, 1080×2340, плотность 480).</p>
+</main>
+<script>
+const icons={
+  back:'<path d="m14 5-7 7 7 7M7 12h14"/>',
+  history:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/>',
+  fullscreen:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  compress:'<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>',
+  person:'<circle cx="12" cy="5" r="2"/><path d="M12 8v7m-5-4 5-3 5 3m-5 4-4 6m4-6 4 6"/>',
+  car:'<path d="m4 10 2-5h12l2 5v8H4zM4 10h16M7 14h2m6 0h2M6 18v2m12-2v2"/>',
+  play:'<path d="m9 5 11 7-11 7Z"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
+  rewind:'<path d="m11 6-8 6 8 6V6Zm10 0-8 6 8 6V6Z"/>',
+  forward:'<path d="m3 6 8 6-8 6V6Zm10 0 8 6-8 6V6Z"/>',
+  volume:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/>',
+  muted:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6m0-6-5 6"/>',
+  live:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',  pip:'<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1" fill="currentColor" stroke="none"/>',  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/>',  audio:'<path d="M4 9v6h4l5 4V5L8 9Z"/><path d="M16 9a4 4 0 0 1 0 6"/>',  event:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>',  snapshot:'<path d="M4 8h3l1.5-2h7L17 8h3v11H4Z"/><circle cx="12" cy="13.5" r="3.5"/>',  cog:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',  more:'<circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/>',
+  warning:'<path d="M12 4 3 20h18L12 4Z"/><path d="M12 10v4m0 3h.01"/>',
+  power:'<path d="M12 3v9"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>',
+  detect:'<circle cx="10" cy="8" r="3"/><path d="M4 20a6 6 0 0 1 12 0"/><circle cx="17.5" cy="17.5" r="3"/><path d="m20 20-2.5-2.5"/>',
+  record:'<rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 11 6-3.5v9L15 13z"/>',
+  ear:'<path d="M7 9a5 5 0 0 1 10 0c0 3-4 3.6-4 6.2a2 2 0 0 1-4 0"/><path d="M10.5 9a1.5 1.5 0 0 1 3 0"/>',
+  caption:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9.5 10.5a2 2 0 0 0 0 3M15 10.5a2 2 0 0 0 0 3"/>',
+  viewfinder:'<path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/><circle cx="12" cy="12" r="2.5"/>',
+  left:'<path d="m14 6-6 6 6 6"/>',  right:'<path d="m10 6 6 6-6 6"/>',  up:'<path d="m6 14 6-6 6 6"/>',  down:'<path d="m6 10 6 6 6-6"/>',
+  zoomIn:'<circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/>',
+  zoomOut:'<circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M8 11h6"/>'
+};
+function icon(name){return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+icons[name]+'</svg>'}
+
+// Deliberately synthetic, inline illustrations: no private camera imagery and no network requests.
+function scene(kind=0,person=false){
+  const palettes=[['#7b8381','#4d5652','#9b9a8c'],['#777f7b','#414c45','#8b8d79'],['#77818a','#49575d','#909493']];
+  const [sky,wall,ground]=palettes[kind%3];
+  return `<svg class="scene" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="640" height="360" fill="${sky}"/><path d="M0 165 640 125v235H0" fill="${ground}"/><path d="M0 0h245v245L0 300Z" fill="${wall}"/><path d="M0 15 260 0v37L0 69" fill="#303a38"/><path d="M60 100h104v131H60z" fill="#283330"/><path d="M68 107h87v113H68z" fill="#59645c"/><path d="m245 245 395 65v50H117Z" fill="#b9b6a4" opacity=".5"/><path d="M368 110 640 66v89l-272 24Z" fill="#394b3e"/><path d="M380 93v96m38-103v97m38-104v99m38-104v98m38-104v98m38-105v99m38-105v100" stroke="#84917a" stroke-width="9"/><path d="M260 270 640 340M210 301l400 59M310 252l-66 108M400 268l-20 92M500 284l28 76" stroke="#797e72" stroke-width="2" opacity=".7"/><ellipse cx="550" cy="223" rx="63" ry="16" fill="#303a32" opacity=".3"/><path d="M513 211v-43m0 6-26-20m26 33 23-29" stroke="#4c5241" stroke-width="8"/><circle cx="510" cy="143" r="37" fill="#53664e"/>${person?'<ellipse cx="334" cy="297" rx="28" ry="7" fill="#0004"/><circle cx="333" cy="202" r="12" fill="#c0b6a2"/><path d="m321 219 24-2 10 41-16 5-22-4Z" fill="#354557"/><path d="m324 259-5 35m22-34 12 31" stroke="#2a3137" stroke-width="11"/><path d="m320 225-14 28m40-30 16 23" stroke="#354557" stroke-width="9"/>':''}</svg>`;
+}
+
+/* PURE ZOOM MODEL START */
+// Mirrors feature/player/PlayerZoom.kt: the same numbers, the same clamps.
+// Geometry (offsets, focal point) lives in the pixels of the picture element; the limit is
+// counted in the physical pixels of the screen, exactly like Compose counts them.
+const ZOOM_MIN_SCALE = 1;
+const ZOOM_MAX_SCALE = 10;
+const ZOOM_FALLBACK_SCALE = 4;
+
+function zoomMaxScale(sourceWidthPx, viewportWidthPx) {
+  if (!sourceWidthPx || !viewportWidthPx) return ZOOM_FALLBACK_SCALE;
+  const scale = 3 * sourceWidthPx / viewportWidthPx;
+  return Math.min(ZOOM_MAX_SCALE, Math.max(ZOOM_MIN_SCALE, scale));
+}
+
+function clampZoom(zoom, width, height) {
+  const maxX = Math.max(0, (zoom.scale - 1) * width / 2);
+  const maxY = Math.max(0, (zoom.scale - 1) * height / 2);
+  return {
+    scale: zoom.scale,
+    offsetX: Math.min(maxX, Math.max(-maxX, zoom.offsetX)),
+    offsetY: Math.min(maxY, Math.max(-maxY, zoom.offsetY)),
+  };
+}
+
+function zoomAround(zoom, factor, focusX, focusY, maxScale, width, height) {
+  const startScale = zoom.scale;
+  const endScale = Math.min(maxScale, Math.max(ZOOM_MIN_SCALE, startScale * factor));
+  if (endScale === startScale) return zoom;
+  const centerX = width / 2, centerY = height / 2;
+  const dx = focusX - centerX, dy = focusY - centerY;
+  const contentX = (dx - zoom.offsetX) / startScale;
+  const contentY = (dy - zoom.offsetY) / startScale;
+  return clampZoom({
+    scale: endScale,
+    offsetX: dx - contentX * endScale,
+    offsetY: dy - contentY * endScale,
+  }, width, height);
+}
+
+function panBy(zoom, dx, dy, width, height) {
+  if (zoom.scale <= ZOOM_MIN_SCALE) return zoom;
+  return clampZoom({scale: zoom.scale, offsetX: zoom.offsetX + dx, offsetY: zoom.offsetY + dy}, width, height);
+}
+
+function createZoomModel(options) {
+  let sourceWidthPx = options.sourceWidthPx || 0;
+  let viewportWidth = 0;
+  let viewportHeight = 0;
+  let viewportWidthDevice = 0;
+  let state = {scale: ZOOM_MIN_SCALE, offsetX: 0, offsetY: 0};
+  const maxScale = () => zoomMaxScale(sourceWidthPx, viewportWidthDevice);
+  const snapshot = () => ({scale: state.scale, offsetX: state.offsetX, offsetY: state.offsetY, maxScale: maxScale()});
+  function setSourceWidth(width) {
+    sourceWidthPx = width;
+  }
+  function setViewport(width, height, widthDevice) {
+    viewportWidth = width;
+    viewportHeight = height;
+    viewportWidthDevice = widthDevice || width;
+    state = clampZoom(state, viewportWidth, viewportHeight);
+  }
+  function zoomAroundPoint(factor, focusX, focusY) {
+    state = zoomAround(state, factor, focusX, focusY, maxScale(), viewportWidth, viewportHeight);
+  }
+  function pan(dx, dy) {
+    state = panBy(state, dx, dy, viewportWidth, viewportHeight);
+  }
+  function reset() {
+    state = {scale: ZOOM_MIN_SCALE, offsetX: 0, offsetY: 0};
+  }
+  return {snapshot, setSourceWidth, setViewport, zoomAroundPoint, pan, reset};
+}
+/* PURE ZOOM MODEL END */
+
+// The mockup counts the limit in physical pixels of the phone: 360 dp x 3 = 1080 px.
+const DEVICE_PIXEL_RATIO = 1080 / 360;
+const cameras = {
+  gate: {name: 'Вход', aspect: 16 / 9, kind: 0, sourceWidth: 3840},
+  yard: {name: 'Двор', aspect: 32 / 9, kind: 1, sourceWidth: 3840},
+  side: {name: 'Боковой вход', aspect: 8 / 9, kind: 2, sourceWidth: 2560},
+};
+const modes = {
+  live: {objects: [], motion: false, tracking: false, offline: false, enabled: true, failed: false},
+  motion: {objects: ['person'], motion: true, tracking: false, offline: false, enabled: true, failed: false},
+  tracking: {objects: ['person'], motion: true, tracking: true, offline: false, enabled: true, failed: false},
+  offline: {objects: [], motion: false, tracking: false, offline: true, enabled: true, failed: false},
+  disabled: {objects: [], motion: false, tracking: false, offline: false, enabled: false, failed: false},
+  failed: {objects: [], motion: false, tracking: false, offline: false, enabled: true, failed: true},
+};
+
+const liveModel = createZoomModel({sourceWidthPx: 3840});
+const archiveModel = createZoomModel({sourceWidthPx: 3840});
+const livePicture = document.querySelector('#live-picture');
+const archivePicture = document.querySelector('#archive-picture');
+
+function applyModel(model, picture) {
+  const value = model.snapshot();
+  picture.style.transform = `translate(${value.offsetX}px, ${value.offsetY}px) scale(${value.scale})`;
+  return value;
+}
+
+function syncZoomReadout() {
+  const value = document.querySelector('#screen').value === 'archive' ? archiveModel.snapshot() : liveModel.snapshot();
+  document.querySelector('#zoom-value').textContent = value.scale.toFixed(1) + '×';
+  document.querySelector('#zoom-limit').textContent = value.maxScale.toFixed(1) + '×';
+}
+
+// Pinch, drag, wheel and double tap: the same gestures the app uses.
+function attachZoom(picture, model, options = {}) {
+  const pointers = new Map();
+  let lastDistance = 0, lastCentroidX = 0, lastCentroidY = 0;
+  let lastTapTime = 0, lastTapX = 0, lastTapY = 0, moved = false;
+  const rect = () => picture.getBoundingClientRect();
+  const local = event => {
+    const box = rect();
+    return {x: event.clientX - box.left, y: event.clientY - box.top};
+  };
+  const centroid = () => {
+    const points = [...pointers.values()];
+    return {
+      x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+      y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+    };
+  };
+  const distance = () => {
+    const points = [...pointers.values()];
+    if (points.length < 2) return 0;
+    return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+  };
+  picture.addEventListener('pointerdown', event => {
+    picture.setPointerCapture(event.pointerId);
+    pointers.set(event.pointerId, local(event));
+    moved = false;
+    if (pointers.size === 2) {
+      const center = centroid();
+      lastCentroidX = center.x;
+      lastCentroidY = center.y;
+      lastDistance = distance();
+    }
+  });
+  picture.addEventListener('pointermove', event => {
+    if (!pointers.has(event.pointerId)) return;
+    const point = local(event);
+    const previous = pointers.get(event.pointerId);
+    pointers.set(event.pointerId, point);
+    if (Math.hypot(point.x - previous.x, point.y - previous.y) > 2) moved = true;
+    if (pointers.size >= 2) {
+      const center = centroid();
+      const spread = distance();
+      if (lastDistance > 0 && spread > 0) {
+        model.zoomAroundPoint(spread / lastDistance, center.x, center.y);
+        model.pan(center.x - lastCentroidX, center.y - lastCentroidY);
+      }
+      lastDistance = spread;
+      lastCentroidX = center.x;
+      lastCentroidY = center.y;
+    } else if (pointers.size === 1) {
+      model.pan(point.x - previous.x, point.y - previous.y);
+    }
+    applyModel(model, picture);
+    syncZoomReadout();
+  });
+  const release = event => {
+    if (!pointers.has(event.pointerId)) return;
+    pointers.delete(event.pointerId);
+    lastDistance = 0;
+    if (pointers.size === 0 && !moved) {
+      const now = event.timeStamp;
+      const point = local(event);
+      if (now - lastTapTime < 300 && Math.hypot(point.x - lastTapX, point.y - lastTapY) < 40) {
+        model.reset();
+        lastTapTime = 0;
+      } else {
+        lastTapTime = now;
+        lastTapX = point.x;
+        lastTapY = point.y;
+        if (options.onTap) options.onTap();
+      }
+      applyModel(model, picture);
+      syncZoomReadout();
+    }
+  };
+  picture.addEventListener('pointerup', release);
+  picture.addEventListener('pointercancel', release);
+  picture.addEventListener('wheel', event => {
+    event.preventDefault();
+    const point = local(event);
+    model.zoomAroundPoint(Math.exp(-event.deltaY * 0.0015), point.x, point.y);
+    applyModel(model, picture);
+    syncZoomReadout();
+  }, {passive: false});
+}
+
+function measure(model, picture) {
+  const box = picture.getBoundingClientRect();
+  model.setViewport(box.width, box.height, box.width * DEVICE_PIXEL_RATIO);
+  applyModel(model, picture);
+}
+
+const liveObjects = document.querySelector('#live-objects');
+const liveRight = document.querySelector('#live-right');
+const liveName = document.querySelector('#live-name');
+const liveMotion = document.querySelector('#live-motion');
+const liveState = document.querySelector('#live-state');
+const liveError = document.querySelector('#live-error');
+
+function renderLive() {
+  const camera = cameras[document.querySelector('#camera').value];
+  const mode = modes[document.querySelector('#mode').value];
+  const box = document.querySelector('#live-stage');
+  const available = box.clientWidth - 16;
+  const width = Math.min(available, Math.max(160, box.clientHeight * camera.aspect));
+  livePicture.style.width = width + 'px';
+  livePicture.style.height = (width / camera.aspect) + 'px';
+  livePicture.classList.toggle('tracking', mode.tracking);
+  document.querySelector('#live-scene').innerHTML = scene(camera.kind, mode.objects.length > 0);
+  liveObjects.hidden = mode.objects.length === 0 || !mode.enabled || mode.offline;
+  liveObjects.innerHTML = mode.objects.map(label => icon(label === 'person' ? 'person' : 'car')).join('');
+  // The PWA shows the camera name only when the camera is offline or disabled.
+  const showName = mode.offline || !mode.enabled;
+  liveName.hidden = !showName;
+  liveName.textContent = camera.name;
+  liveMotion.hidden = !mode.motion || !mode.enabled || mode.offline;
+  liveState.hidden = mode.enabled && !mode.offline;
+  liveState.classList.toggle('offline', mode.offline);
+  document.querySelector('#live-state-icon').innerHTML = icon(mode.enabled ? 'warning' : 'live');
+  document.querySelector('#live-state-text').textContent = mode.enabled ? 'Camera offline' : 'Camera disabled';
+  liveError.hidden = !mode.failed;
+  liveModel.reset();
+  liveModel.setSourceWidth(camera.sourceWidth);
+  measure(liveModel, livePicture);
+  syncZoomReadout();
+}
+
+function renderArchive() {
+  const camera = cameras[document.querySelector('#camera').value];
+  const box = document.querySelector('#archive-stage');
+  const available = box.clientWidth - 16;
+  const width = Math.min(available, Math.max(160, box.clientHeight * (16 / 9)));
+  archivePicture.style.width = width + 'px';
+  archivePicture.style.height = (width / (16 / 9)) + 'px';
+  document.querySelector('#archive-scene').innerHTML = scene(camera.kind, true);
+  document.querySelector('#archive-camera').textContent = camera.name;
+  document.querySelector('#archive-object').innerHTML = icon('person');
+  archiveModel.reset();
+  measure(archiveModel, archivePicture);
+  syncZoomReadout();
+}
+
+document.querySelector('#back').innerHTML = icon('back');
+document.querySelector('#history').innerHTML = icon('history');
+document.querySelector('#fs-back').innerHTML = icon('back');
+document.querySelector('#fullscreen').innerHTML = icon('fullscreen');
+document.querySelector('#fs-fullscreen').innerHTML = icon('compress');
+document.querySelector('#pip').innerHTML = icon('pip');
+document.querySelector('#talk').innerHTML = icon('mic');
+document.querySelector('#sound').innerHTML = icon('audio');
+document.querySelector('#event').innerHTML = icon('event');
+document.querySelector('#shot').innerHTML = icon('snapshot');
+document.querySelector('#features').innerHTML = icon('cog');
+document.querySelector('#ptz-left').innerHTML = icon('left');
+document.querySelector('#ptz-up').innerHTML = icon('up');
+document.querySelector('#ptz-down').innerHTML = icon('down');
+document.querySelector('#ptz-right').innerHTML = icon('right');
+document.querySelector('#ptz-zoom-in').innerHTML = icon('zoomIn');
+document.querySelector('#ptz-zoom-out').innerHTML = icon('zoomOut');
+document.querySelector('#ptz-presets').innerHTML = icon('more');
+
+// The stream and the engine are selects in the PWA (Radix Select): a value, a chevron
+// and a list of the options. The mockup keeps them working.
+function attachSelect(selectId, optionsId, valueId, optionIds) {
+  const select = document.querySelector('#' + selectId);
+  const options = document.querySelector('#' + optionsId);
+  const value = document.querySelector('#' + valueId);
+  select.onclick = () => {
+    const open = options.hidden;
+    options.hidden = !open;
+    select.setAttribute('aria-expanded', String(open));
+  };
+  optionIds.forEach(id => {
+    const option = document.querySelector('#' + id);
+    // Недоступный вариант остаётся видимым, но выбрать его нельзя.
+    if (option.classList.contains('is-off')) return;
+    option.onclick = () => {
+      optionIds.forEach(other => document.querySelector('#' + other).classList.remove('is-active'));
+      option.classList.add('is-active');
+      value.textContent = option.textContent;
+      options.hidden = true;
+      select.setAttribute('aria-expanded', 'false');
+    };
+  });
+}
+attachSelect('sheet-stream', 'sheet-stream-options', 'sheet-stream-value', ['sheet-stream-auto', 'sheet-stream-2k', 'sheet-stream-4k', 'sheet-stream-720']);
+attachSelect('sheet-engine', 'sheet-engine-options', 'sheet-engine-value', ['sheet-engine-mse', 'sheet-engine-webrtc']);
+attachSelect('menu-stream', 'menu-stream-options', 'menu-stream-value', ['menu-stream-auto', 'menu-stream-2k', 'menu-stream-4k', 'menu-stream-720']);
+attachSelect('menu-engine', 'menu-engine-options', 'menu-engine-value', ['menu-engine-mse', 'menu-engine-webrtc']);
+
+// The cog of the PWA opens a bottom sheet on a narrow screen and a dropdown on a wide one.
+function cameraMenu() {
+  return document.querySelector('#live-screen').classList.contains('wide-layout')
+    ? document.querySelector('#features-menu')
+    : document.querySelector('#camera-drawer');
+}
+function toggleCameraMenu(on) {
+  const menu = cameraMenu();
+  const open = on === undefined ? menu.hidden : on;
+  document.querySelector('#camera-drawer').hidden = true;
+  document.querySelector('#features-menu').hidden = true;
+  menu.hidden = !open;
+  document.querySelector('#sheet-scrim').hidden = !open || menu.id !== 'camera-drawer';
+}
+document.querySelector('#features').onclick = () => toggleCameraMenu();
+document.querySelector('#sheet-scrim').onclick = () => toggleCameraMenu(false);
+
+// The sheet of the camera settings is closed by a swipe down, like the drawer of the PWA:
+// the sheet follows the finger, a short movement snaps it back. The drag starts at the
+// handle of the sheet; the list of the settings scrolls on its own.
+const SHEET_DISMISS_DISTANCE = 96;
+function attachSheetDrag(handle) {
+  const sheet = document.querySelector('#camera-drawer');
+  let startY = 0, dragging = false, delta = 0;
+  handle.addEventListener('pointerdown', event => {
+    if (event.target && event.target.closest && event.target.closest('button')) return;
+    dragging = true;
+    startY = event.clientY;
+    delta = 0;
+    sheet.style.transition = '';
+    sheet.style.transform = '';
+  });
+  handle.addEventListener('pointermove', event => {
+    if (!dragging) return;
+    const moved = event.clientY - startY;
+    if (moved <= 0) return;
+    delta = moved;
+    sheet.style.transform = `translateY(${delta}px)`;
+  });
+  const release = () => {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = 'transform .18s ease-out';
+    sheet.style.transform = '';
+    if (delta > SHEET_DISMISS_DISTANCE) {
+      sheet.hidden = true;
+      document.querySelector('#sheet-scrim').hidden = true;
+    }
+  };
+  handle.addEventListener('pointerup', release);
+  handle.addEventListener('pointercancel', release);
+}
+attachSheetDrag(document.querySelector('#sheet-grab'));
+
+// The fullscreen of the PWA: the header leaves the screen and becomes a floating row on the right.
+function setFullscreen(on) {
+  document.querySelector('#live-screen').classList.toggle('fullscreen', on);
+  renderLive();
+}
+document.querySelector('#fullscreen').onclick = () => setFullscreen(true);
+document.querySelector('#fs-fullscreen').onclick = () => setFullscreen(false);
+document.querySelector('#fs-back').onclick = () => setFullscreen(false);
+
+function showToast(message) {
+  const toast = document.querySelector('#live-toast');
+  toast.textContent = message;
+  toast.hidden = false;
+  setTimeout(() => { toast.hidden = true; }, 1600);
+}
+document.querySelector('#shot').onclick = () => showToast('Кадр сохранён');
+document.querySelector('#sheet-shot').onclick = () => showToast('Кадр сохранён');
+document.querySelector('#menu-shot').onclick = () => showToast('Кадр сохранён');
+document.querySelector('#archive-back').innerHTML = icon('back');
+document.querySelector('#archive-live').innerHTML = icon('live');
+document.querySelector('#archive-mute').innerHTML = icon('muted');
+document.querySelector('#archive-back10').innerHTML = icon('rewind');
+document.querySelector('#archive-forward10').innerHTML = icon('forward');
+document.querySelector('#archive-play').innerHTML = icon('pause');
+document.querySelector('#archive-fullscreen').innerHTML = icon('fullscreen');
+
+attachZoom(livePicture, liveModel);
+attachZoom(archivePicture, archiveModel, {
+  onTap: () => {
+    const controls = document.querySelector('#archive-controls');
+    controls.hidden = !controls.hidden;
+  },
+});
+
+document.querySelector('#screen').onchange = event => {
+  const archive = event.target.value === 'archive';
+  document.querySelector('#live-screen').hidden = archive;
+  document.querySelector('#archive-screen').hidden = !archive;
+  if (archive) renderArchive(); else renderLive();
+  syncZoomReadout();
+};
+document.querySelector('#camera').onchange = () => {
+  if (document.querySelector('#screen').value === 'archive') renderArchive(); else renderLive();
+};
+document.querySelector('#mode').onchange = renderLive;
+document.querySelector('#width').onclick = function () {
+  const on = document.querySelector('.device').classList.toggle('wide');
+  // The wide layout of the PWA: labels on Back and History, the cog opens a dropdown
+  // instead of a sheet. The camera toggles live in that menu: the app has no admin rights,
+  // so the wide header keeps only the actions of the app.
+  document.querySelector('#live-screen').classList.toggle('wide-layout', on);
+  this.setAttribute('aria-pressed', String(on));
+  renderLive();
+  renderArchive();
+};
+document.querySelector('#reset').onclick = () => {
+  document.querySelector('#screen').value = 'live';
+  document.querySelector('#camera').value = 'gate';
+  document.querySelector('#mode').value = 'live';
+  document.querySelector('#live-screen').hidden = false;
+  document.querySelector('#archive-screen').hidden = true;
+  renderLive();
+  syncZoomReadout();
+};
+document.querySelector('#live-retry').onclick = () => {
+  document.querySelector('#mode').value = 'live';
+  renderLive();
+};
+document.querySelector('#archive-speed').onclick = event => {
+  const speeds = ['1×', '2×', '4×', '8×', '16×'];
+  const current = speeds.indexOf(event.target.textContent);
+  event.target.textContent = speeds[(current + 1) % speeds.length];
+};
+document.querySelector('#archive-play').onclick = event => {
+  const playing = event.target.getAttribute('aria-label') === 'Пауза';
+  event.target.setAttribute('aria-label', playing ? 'Воспроизвести' : 'Пауза');
+  event.target.innerHTML = icon(playing ? 'play' : 'pause');
+};
+renderLive();
+renderArchive();
+</script>
+</body>
+</html>

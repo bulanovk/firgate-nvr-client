@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>History timeline: gradient vs flat (rev 1)</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#111214;color:#e8e8e8}
+body{margin:0;padding:24px}
+h1{font-size:20px;margin:0 0 4px}
+p{color:#a3a3a3;font-size:13px;max-width:640px;margin:4px 0 20px}
+.pair{display:flex;gap:40px;flex-wrap:wrap}
+figure{margin:0;width:180px}
+figcaption{font-size:13px;margin-bottom:8px}
+.col{background:#262626;position:relative;border:1px solid #414141}
+.row{height:24px;width:100%;position:relative}
+.row.none{background:#000}
+.row.plain{background:#262626}
+/* current: the gradient of the approved mock and of the PWA */
+.grad .row.alert{background:linear-gradient(90deg,#ef444433,#991b1b33)}
+.grad .row.detect{background:#ea580c33}
+/* proposed: one flat colour per severity, the same 20% alpha */
+.flat .row.alert{background:#991b1b33}
+.flat .row.detect{background:#ea580c33}
+.motion{position:absolute;left:50%;top:1px;width:4px;height:22px;transform:translateX(-50%);border-radius:2px;background:#f7b908}
+.cursor{position:absolute;left:0;right:0;top:60px;height:2px;background:#ef4444}
+.legend{font-size:12px;color:#a3a3a3;margin-top:8px}
+</style>
+</head>
+<body>
+<h1>History timeline rows: with gradient and without</h1>
+<p>Static mock. Left is the current look (a horizontal gradient on alert rows). Right is the proposal: one flat colour per severity at the same 20% alpha. Detection rows are already flat. Alert uses the darker red <code>#991b1b</code>. Colours come from <code>HistoryColors</code>.</p>
+<div class="pair">
+  <figure class="grad">
+    <figcaption>Now: gradient</figcaption>
+    <div class="col">
+      <div class="row none"></div>
+      <div class="row plain"><span class="motion"></span></div>
+      <div class="row detect"><span class="motion"></span></div>
+      <div class="row alert"><span class="motion"></span></div>
+      <div class="row alert"></div>
+      <div class="row detect"></div>
+      <div class="row plain"></div>
+      <div class="row none"></div>
+      <span class="cursor"></span>
+    </div>
+    <div class="legend">black: no recording · grey: plain · orange: detection · red: alert</div>
+  </figure>
+  <figure class="flat">
+    <figcaption>Proposal: flat</figcaption>
+    <div class="col">
+      <div class="row none"></div>
+      <div class="row plain"><span class="motion"></span></div>
+      <div class="row detect"><span class="motion"></span></div>
+      <div class="row alert"><span class="motion"></span></div>
+      <div class="row alert"></div>
+      <div class="row detect"></div>
+      <div class="row plain"></div>
+      <div class="row none"></div>
+      <span class="cursor"></span>
+    </div>
+    <div class="legend">same rows, no gradient</div>
+  </figure>
+</div>
+</body>
+</html>

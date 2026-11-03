@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Frigate · PWA History — native mockup</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;color:#f4f4f5;background:#111214;font-size:16px;--muted:#a7a9ae;--line:#34363b;--accent:#fb923c}*{box-sizing:border-box}body{margin:0}button,select{font:inherit;color:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}.studio{max-width:1140px;margin:auto;padding:32px 24px}.eyebrow{color:var(--accent);font-size:11px;letter-spacing:.16em;font-weight:700}h1{font-size:clamp(24px,4vw,36px);font-weight:600;letter-spacing:-.04em;margin:10px 0}p{color:var(--muted);line-height:1.55}.intro{max-width:680px}.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:24px 0}.controls label{font-size:13px;color:#c5c7cb;display:flex;gap:8px;align-items:center;flex-wrap:wrap}select,.control{background:#212226;border:1px solid #414349;border-radius:8px;padding:10px;min-height:48px}.control[aria-pressed=true]{border-color:var(--accent);background:#38281d}.workbench{display:flex;align-items:flex-start;gap:40px}.device{width:390px;max-width:100%;flex-shrink:0;border:1px solid #414349;border-radius:28px;background:#000;overflow:hidden;box-shadow:0 24px 90px #0006}.device.wide{width:760px}.statusbar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;color:#d5d6d8}.app{height:740px;display:flex;flex-direction:column}.toolbar{min-height:56px;display:flex;align-items:center;padding:8px 16px;font-size:23px;font-weight:600;letter-spacing:-.03em}.scroll{overflow-y:auto;flex:1;min-height:0;padding:0 8px 8px;scrollbar-width:thin}.review{padding-bottom:16px}.section-heading{display:flex;gap:8px;align-items:center;margin:2px 4px 10px;font-size:13px;font-weight:550}.section-heading span{font-size:11px;color:var(--muted);font-weight:400;margin-left:auto}.strip{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;padding:2px 2px 8px}.review-card{width:164px;flex:0 0 164px;scroll-snap-align:start;position:relative}.open-review{position:relative;display:block;width:100%;height:100px;border:0;padding:0;border-radius:8px;overflow:hidden;background:#26292b;text-align:left}.scene{width:100%;height:100%;display:block}.open-review:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 35%,#000c)}.age{position:absolute;bottom:7px;left:8px;z-index:1;font-size:11px;text-shadow:0 1px 3px #000}.ongoing{position:absolute;top:6px;left:6px;z-index:1;background:#21180feb;border:1px solid #976333;border-radius:4px;padding:3px 5px;font-size:10px;color:#ffca9d}.card-info{display:flex;align-items:center;min-height:48px;gap:4px}.card-name{min-width:0;flex:1;font-size:11px;line-height:1.4;color:#d9dadd}.card-name strong{font-size:12px;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-name span{color:var(--muted)}.mark{flex:0 0 48px;width:48px;height:48px;border:0;border-radius:8px;background:transparent;color:#bbbfc5;display:grid;place-items:center}.mark:hover{background:#27292c;color:white}svg.icon{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.grid{display:grid;grid-template-columns:1fr;gap:8px}.wide .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.camera{aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:8px;background:#303537}.camera.tracking{outline:3px solid #ef8b42;outline-offset:-3px}.camera-label,.objects{position:absolute;top:9px;background:#25262bde;backdrop-filter:blur(5px);border-radius:5px;font-size:11px;padding:5px 7px;color:white}.camera-label{right:9px;max-width:70%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.objects{left:9px;display:flex;gap:5px;align-items:center}.objects .icon{width:16px;height:16px}.motion{display:inline-block;width:6px;height:6px;background:#fa5757;border-radius:50%;margin-left:6px;vertical-align:middle}.nav{min-height:72px;background:#1d1e21;border-top:1px solid #303136;display:flex;justify-content:space-around;padding:6px 8px 10px}.nav button{border:0;background:transparent;min-width:72px;min-height:52px;color:#9da1a8;font-size:10px;display:flex;align-items:center;flex-direction:column;justify-content:center;gap:4px}.nav button[aria-current=page]{color:white}.nav button[aria-current=page] .icon{background:#45474f;border-radius:6px;width:40px;padding:3px;height:26px}.notes{max-width:290px;font-size:13px;padding-top:16px}.notes h2{font-size:16px;font-weight:550;margin:0 0 8px}.notes p{margin:0 0 24px}.note-rule{border-top:1px solid var(--line);padding-top:20px}.message{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12px;color:#d7d8db}.message button{min-height:48px;background:#292b30;border:0;border-radius:6px;padding:8px 12px}.skeleton{width:164px;flex:0 0 164px;height:148px;background:linear-gradient(#24262b 100px,#151619 100px);border-radius:8px}.fallback{height:100%;display:grid;place-items:center;font-size:11px;color:#ccc;background:#292d31}.notice{font-size:12px;color:var(--muted);margin-top:16px}.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#eee;color:#17181a;padding:12px 20px;border-radius:10px;max-width:90%;box-shadow:0 5px 30px #0008;z-index:10;font-size:13px}dialog{background:#17191c;border:1px solid #52565d;color:#eee;border-radius:16px;padding:20px;max-width:560px;width:calc(100% - 32px)}dialog::backdrop{background:#000b}dialog h2{font-size:20px;margin:8px 0}dialog .preview{aspect-ratio:16/9;overflow:hidden;border-radius:8px}dialog button{background:#34373e;border:0;border-radius:8px;min-height:48px;padding:10px 16px}dialog .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:20px}.large-text .app{font-size:125%}.large-text .section-heading{font-size:16px;flex-wrap:wrap}.large-text .card-name strong{font-size:15px}.large-text .card-name span,.large-text .age{font-size:14px}.large-text .camera-label{font-size:14px}@media(max-width:850px){.workbench{flex-wrap:wrap;gap:20px}.notes{max-width:600px}.studio{padding:20px 12px}.device.wide{width:100%}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+[hidden]{display:none!important}
+.workbench{flex-wrap:wrap}.app{position:relative}.live-shell{height:100%;display:flex;flex-direction:column}
+.history-view{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;padding:0 8px 8px;color:#e8e8e8}
+.history-header{height:48px;flex:none;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;position:relative;gap:4px}
+.header-left,.header-right{display:flex;align-items:center;gap:0;z-index:1}.history-button{min-width:48px;min-height:48px;border:0;padding:0 8px;color:#e8e8e8;background:transparent;display:inline-flex;align-items:center;justify-content:center;gap:5px;border-radius:8px;font-size:12px}
+.history-button:hover{background:#262626}.history-button .icon{width:20px;height:20px}.header-right .history-button{background:#1f1f1f;margin-left:2px;min-width:48px;padding:0 8px}
+.frigate-logo{position:absolute;left:calc(50% - 15px);width:30px;height:30px;fill:#e8e8e8;pointer-events:none}
+.history-layout{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}
+.history-video-column{flex:none;min-width:0;display:flex;align-items:center;justify-content:center;background:#000}
+.history-picture{position:relative;width:100%;aspect-ratio:16/9;max-height:50dvh;border-radius:8px;background:#000;overflow:hidden}
+.history-illustration{height:100%;width:100%}.history-illustration .scene{height:100%;width:100%;object-fit:contain}
+.camera-osd{position:absolute;left:10px;top:10px;color:white;font-size:10px;text-shadow:0 1px 3px #000;font-variant-numeric:tabular-nums;pointer-events:none}
+.history-controls{position:absolute;z-index:3;bottom:20px;left:50%;transform:translateX(-50%);display:flex;justify-content:center;align-items:center;background:#0009;border-radius:8px;padding:4px;max-width:calc(100% - 8px);width:max-content;flex-wrap:wrap}
+.history-controls .history-button{width:48px;height:48px;min-height:48px;padding:0;flex-shrink:0}.history-controls .icon{width:20px;height:20px}
+.skip-icon{position:relative;display:grid;place-items:center;width:22px;height:24px}.skip-icon small{position:absolute;font-size:8px;top:8px;left:7px}.volume-slider{width:60px;min-height:48px;accent-color:#e8e8e8}
+.rate-menu{position:absolute;bottom:78px;right:60px;background:#262626;padding:4px;border:1px solid #444;border-radius:8px;z-index:6;min-width:96px}.rate-menu button{display:block;border:0;background:transparent;color:#eee;min-height:48px;width:100%;text-align:center;border-radius:6px}.rate-menu button[aria-checked=true]{background:#404040}
+.history-video-overlay{position:absolute;inset:0;z-index:2;display:grid;place-content:center;text-align:center;background:#000b;font-size:13px;padding:16px;gap:12px}.history-video-overlay .spinner{margin:auto;width:28px;height:28px;border:2px solid #555;border-top-color:#eee;border-radius:50%;animation:history-spin 1s linear infinite}@keyframes history-spin{to{transform:rotate(360deg)}}
+.history-panel{position:relative;min-height:0;flex:1;overflow:hidden;background:#262626;border-radius:8px}
+.timeline-scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:thin;outline-offset:-3px;overscroll-behavior:contain}
+.timeline-ruler{position:relative;width:100%}.timeline-marks{position:absolute;inset:0;pointer-events:none}
+.time-segment{position:absolute;height:8px;width:100%;background:#262626}.time-segment.alert{background:linear-gradient(90deg,#ef44441a,#991b1b1a)}.time-segment.detection{background:linear-gradient(90deg,#fb923c33,#ea580c33)}.time-segment.gap{background:#000;border-top:1px solid #ffffff40;border-bottom:1px solid #ffffff40}
+.time-segment .motion-line{position:absolute;left:50%;transform:translateX(-50%);height:2px;top:1px;border-radius:2px;background:#888;width:1px}.time-segment .motion-line.second{top:5px}.time-segment .motion-line.active{background:#f7b908}.time-tick{position:absolute;left:calc(50% - 26px);width:8px;height:1px;top:3px;background:#777}
+.time-label{position:absolute;left:calc(50% + 30px);top:-4px;color:#d4d4d4;font-size:11px;line-height:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.timeline-cursor{position:absolute;left:0;right:0;height:2px;background:#ef4444;z-index:3;touch-action:none;cursor:ns-resize}
+.timeline-cursor button{position:absolute;top:-23px;left:calc(50% - 40px);border:0;width:80px;min-height:48px;background:transparent;color:#fff;font-size:12px;font-variant-numeric:tabular-nums;touch-action:none;cursor:ns-resize;padding:0}
+.timeline-cursor button span{display:block;background:#991b1b;border-radius:5px;line-height:24px}.timeline-cursor.dragging button span{background:#ef4444}
+.timeline-zoom{position:absolute;right:8px;bottom:8px;z-index:5;display:flex;flex-direction:column;gap:4px}.timeline-zoom button{border:1px solid #414141;background:#1f1f1f;min-width:48px;min-height:48px;border-radius:8px;color:#eee;font-size:22px}.timeline-zoom button:disabled{opacity:.4;cursor:default}
+.panel-list{height:100%;overflow:auto;padding:16px;scrollbar-width:thin}.history-event{display:block;width:100%;text-align:left;border:0;background:transparent;color:#eee;padding:0;margin:0 0 16px;border-radius:8px}.history-event[aria-current=true] .event-image{outline:2px solid #ef4444;outline-offset:-2px}.event-image{width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:8px}.event-caption{display:flex;align-items:center;gap:8px;font-size:12px;min-height:48px}.severity-dot{width:8px;height:8px;display:inline-block;border-radius:50%;background:#991b1b;flex:none}.severity-dot.detection{background:#ea580c}.event-caption .icon{height:17px;width:17px}.event-caption time{margin-left:auto}.event-age{display:block;color:#a3a3a3;font-size:11px;margin-top:-4px}
+.detail-card{border-bottom:1px solid #414141;padding:12px 0}.detail-card summary{min-height:48px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px}.detail-card summary .icon{height:18px;width:18px}.detail-card small{margin-left:auto;color:#a3a3a3;font-size:11px}.detail-time{display:block;color:#a3a3a3;font-size:11px;margin:0 0 6px}.lifecycle-row{min-height:48px;width:100%;background:transparent;border:0;color:#e5e5e5;display:flex;align-items:center;gap:12px;text-align:left;padding:8px;font-size:11px}.lifecycle-row time{color:#a3a3a3;font-variant-numeric:tabular-nums}.lifecycle-row.active{border-left:2px solid #526ef5;background:#ffffff08}.detail-settings{margin-top:24px;color:#d4d4d4;font-size:12px}.detail-settings summary{min-height:48px;cursor:pointer}.detail-settings label{display:flex;align-items:center;min-height:48px;gap:8px}.detail-settings input[type=range]{width:100%;min-height:48px}
+.history-sheet-backdrop{position:absolute;inset:0;z-index:20;background:#0009;display:flex;align-items:flex-end}.history-sheet{margin:0 4px;width:calc(100% - 8px);max-height:80%;overflow-y:auto;border:1px solid #414141;border-bottom:0;border-radius:16px 16px 0 0;background:#000;color:#eee;padding:10px 16px 16px;box-shadow:0 -12px 60px #0006}.sheet-grip{width:44px;height:4px;background:#404040;border-radius:4px;margin:0 auto 12px}.sheet-options{display:flex;flex-direction:column;gap:4px}.sheet-option{border:0;min-height:48px;background:transparent;color:#eee;text-align:center;border-radius:8px;padding:8px 12px;font-size:14px}.sheet-option[aria-checked=true]{background:#262626}.sheet-title{font-size:16px;font-weight:500;margin:10px 0 16px}.sheet-description{font-size:12px;color:#a3a3a3;line-height:1.6}.sheet-input{width:100%;background:#262626;color:#eee;border:1px solid #525252;padding:12px;border-radius:8px;min-height:48px;font:inherit}.sheet-actions{display:flex;justify-content:flex-end;margin-top:12px;gap:8px}.sheet-actions button{min-height:48px;padding:8px 16px;background:#262626;border:0;color:#eee;border-radius:8px}.settings-grid{display:flex;flex-direction:column;gap:8px}.settings-grid .sheet-option{width:100%}.filter-header{display:flex;align-items:center;gap:8px}.filter-header .sheet-title{flex:1;text-align:center;margin-right:48px}.filter-switch{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;font-size:14px}.filter-switch input{appearance:none;flex:none;width:38px;height:22px;border-radius:12px;background:#525252;position:relative;cursor:pointer}.filter-switch input:checked{background:#526ef5}.filter-switch input:before{content:"";position:absolute;width:18px;height:18px;top:2px;left:2px;background:#eee;border-radius:50%}.filter-switch input:checked:before{left:18px}.filter-switch input:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}.settings-grid .sheet-option{background:#1f1f1f;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px}.settings-grid .icon{width:18px;height:18px}
+.history-view.full-video .history-panel,.history-view.full-video .history-header{display:none}.history-view.full-video .history-video-column{height:100%;flex:1}.history-view.full-video .history-picture{height:100%;max-height:none;aspect-ratio:auto}
+.device.wide{width:760px}.device.wide .app{height:420px}.device.wide .history-layout{flex-direction:row}.device.wide .history-video-column{flex:1}.device.wide .history-picture{max-height:none}.device.wide .history-panel{width:100px;flex:0 0 100px}.device.wide .history-view[data-panel=events] .history-panel,.device.wide .history-view[data-panel=detail] .history-panel{width:304px;flex-basis:304px}.device.wide .time-label{left:auto;right:4px;font-size:9px}.device.wide .time-tick{left:10px}.device.wide .timeline-zoom{right:0;bottom:4px;gap:0;flex-direction:row}.device.wide .timeline-zoom button{min-width:48px;padding:0}.device.wide .time-segment .motion-line{left:34px}.device.wide .timeline-cursor button{left:10px}.device.wide .history-controls .history-button{width:48px}
+.large-text .history-button{font-size:15px}.large-text .sheet-option{font-size:18px}.large-text .time-label,.large-text .event-caption,.large-text .detail-card summary{font-size:14px}
+@media(max-width:850px){.device.wide{width:100%}.device.wide .history-view[data-panel=events] .history-panel,.device.wide .history-view[data-panel=detail] .history-panel{width:45%;flex-basis:45%}}
+@media(prefers-reduced-motion:reduce){.history-video-overlay .spinner{animation:none}}
+
+.time-segment.alert{background:linear-gradient(90deg,#ef444433,#991b1b33)}.time-segment.alert.reviewed{background:linear-gradient(90deg,#ef44441a,#991b1b1a)}.live-camera-view{position:absolute;inset:0;z-index:8;background:#000;padding:0 8px;display:flex;flex-direction:column}.live-camera-view header{display:flex;align-items:center;gap:8px;min-height:56px;font-size:18px}.live-camera-frame{aspect-ratio:16/9;overflow:hidden;border-radius:8px}.live-camera-frame .scene{width:100%;height:100%}
+
+</style>
+</head>
+<body>
+<main class="studio">
+<div class="intro"><div class="eyebrow">FRIGATE / DESIGN PREVIEW</div><h1>History — по структуре PWA.</h1><p>Просмотр записи после нажатия на событие: вертикальная шкала архива, та же панель управления и те же режимы. Browser-макет для переноса в Native Android.</p></div>
+<div class="controls" aria-label="Настройки демонстрации"><label>Экран <select id="demo-screen"><option value="history" selected>History · как в PWA</option><option value="live">Live · принятая карусель</option></select></label><label>Видео <select id="demo-playback-state"><option value="ready">Запись</option><option value="buffering">Загрузка</option><option value="missing">Нет записи</option></select></label><label>Состояние <select id="state"><option value="populated">Непросмотренные</option><option value="empty">Всё просмотрено</option><option value="loading">Загрузка</option><option value="error">Ошибка загрузки</option><option value="thumbnail">Превью недоступно</option></select></label><button class="control" id="width" aria-pressed="false">Альбомная ориентация</button><button class="control" id="text-size" aria-pressed="false">Крупный текст</button><button class="control" id="reset">Сбросить демо</button></div>
+<div class="workbench"><section class="device" aria-label="Макет экрана Android"><div class="statusbar"><span>14:32</span><span>▰ &nbsp; 86%</span></div><div class="app"><div class="live-shell" id="live-shell"><header class="toolbar">Live</header><div class="scroll" id="live-scroll"><section id="review" class="review" aria-label="Непросмотренные события"></section><div class="grid" id="cameras"></div></div><nav class="nav" aria-label="Основная навигация"><button aria-current="page" data-nav="Live"></button><button data-nav="Events"></button><button data-nav="Settings"></button></nav></div><section class="history-view" id="history-view" data-panel="timeline" aria-label="History · запись камеры" hidden>
+  <header class="history-header">
+    <div class="header-left">
+      <button class="history-button" id="history-back" aria-label="Назад" title="Назад"></button>
+      <button class="history-button" id="history-live" aria-label="Live выбранной камеры" title="Live"></button>
+    </div>
+    <svg class="frigate-logo" viewBox="0 0 512 512" role="img" aria-label="Frigate"><path d="M130 446.5C131.6 459.3 145 468 137 470C129 472 94 406.5 86 378.5C78 350.5 73.5 319 75.5 301C77.4999 283 181 255 181 247.5C181 240 147.5 247 146 241C144.5 235 171.3 238.6 178.5 229C189.75 214 204 216.5 213 208.5C222 200.5 233 170 235 157C237 144 215 129 209 119C203 109 222 102 268 83C314 64 460 22 462 27C464 32 414 53 379 66C344 79 287 104 287 111C287 118 290 123.5 288 139.5C286 155.5 285.76 162.971 282 173.5C279.5 180.5 277 197 282 212C286 224 299 233 305 235C310 235.333 323.8 235.8 339 235C358 234 385 236 385 241C385 246 344 243 344 250C344 257 386 249 385 256C384 263 350 260 332 260C317.6 260 296.333 259.333 287 256L285 263C281.667 263 274.7 265 267.5 265C258.5 265 258 268 241.5 268C225 268 230 267 215 266C200 265 144 308 134 322C124 336 130 370 130 385.5C130 399.428 128 430.5 130 446.5Z"/></svg>
+    <div class="header-right">
+      <button class="history-button" id="history-camera" aria-label="Выбрать камеру" title="Камеры"></button>
+      <button class="history-button" id="history-panel-picker" aria-label="Хронология, События или Деталь" title="Режим панели"></button>
+      <button class="history-button" id="history-settings" aria-label="Настройки просмотра" title="Настройки"></button>
+    </div>
+  </header>
+  <div class="history-layout">
+    <div class="history-video-column">
+      <div class="history-picture" id="history-picture" role="group" aria-label="Синтетический кадр записи; нажатие показывает управление">
+        <div class="history-illustration" id="history-illustration"></div>
+        <div class="camera-osd" id="history-osd" aria-hidden="true"></div>
+        <div class="history-video-overlay" id="history-video-overlay" role="status" hidden></div>
+        <div class="history-controls" id="history-controls" role="group" aria-label="Управление воспроизведением">
+          <button class="history-button" id="history-mute" aria-label="Включить звук"></button>
+          <input class="volume-slider" id="history-volume" type="range" min="0" max="1" step="0.02" value="1" aria-label="Громкость · только демонстрация" hidden>
+          <button class="history-button" id="history-rewind" aria-label="Назад на 10 секунд"></button>
+          <button class="history-button" id="history-play" aria-label="Пауза"></button>
+          <button class="history-button" id="history-forward" aria-label="Вперёд на 10 секунд"></button>
+          <button class="history-button" id="history-rate" aria-label="Скорость воспроизведения" aria-expanded="false">1x</button>
+          <button class="history-button" id="history-snapshot" aria-label="Снимок кадра"></button>
+          <button class="history-button" id="history-fullscreen" aria-label="Полноэкранный просмотр"></button>
+        </div>
+        <div class="rate-menu" id="history-rate-menu" role="menu" aria-label="Скорость воспроизведения" hidden></div>
+      </div>
+    </div>
+    <aside class="history-panel" id="history-panel" aria-label="Панель просмотра">
+      <div id="history-timeline">
+        <div class="timeline-scroll" id="timeline-scroll" role="slider" tabindex="0" aria-label="Временная шкала записи; новые моменты сверху" aria-orientation="vertical">
+          <div class="timeline-ruler" id="timeline-ruler">
+            <div class="timeline-marks" id="timeline-marks"></div>
+            <div class="timeline-cursor" id="timeline-cursor"><button id="timeline-handle" aria-label="Перетащить позицию воспроизведения"><span id="timeline-time">14:23:56</span></button></div>
+          </div>
+        </div>
+        <div class="timeline-zoom" aria-label="Масштаб временной шкалы"><button id="zoom-in" aria-label="Приблизить шкалу">+</button><button id="zoom-out" aria-label="Отдалить шкалу" disabled>−</button></div>
+      </div>
+      <div class="panel-list" id="history-events" aria-label="События выбранной камеры" hidden></div>
+      <div class="panel-list" id="history-detail" aria-label="Детали отслеживания" hidden></div>
+    </aside>
+  </div>
+  <div class="history-sheet-backdrop" id="history-sheet-backdrop" hidden>
+    <section class="history-sheet" id="history-sheet" role="dialog" aria-modal="true" aria-label="Параметры просмотра"><div class="sheet-grip" aria-hidden="true"></div><div id="history-sheet-content"></div></section>
+  </div>
+</section>
+<section class="live-camera-view" id="live-camera-view" aria-label="Live выбранной камеры" hidden><header><button class="history-button" id="live-camera-back" aria-label="Назад к камерам"></button><span id="live-camera-name"></span></header><div class="live-camera-frame" id="live-camera-frame"></div></section></div></section>
+<aside class="notes" id="design-notes"><p class="notice"><strong>Расхождение с реализацией:</strong> в приложении строки шкалы заливаются плоским цветом без градиента (решение владельца ради гладкости). Градиент ниже — вид PWA. См. <code>history-timeline-flat.html</code>.</p><h2>События не заслоняют эфир</h2><p>Новые — слева. Следующая карточка видна частично: лента листается вручную, без автопрокрутки.</p><h2>Отметка — отдельное действие</h2><p>Нажмите ✓, чтобы убрать событие. Прокрутка и появление карточки ничего не отмечают. Нажатие на превью открывает демонстрационный просмотр.</p><div class="note-rule"><h2>Как в PWA</h2><p>Непросмотренные alerts за последний час, до 10. Когда список пуст, лента полностью скрывается.</p><p>Все изображения — условные иллюстрации. Видео, API и изменение статусов на сервере не подключены.</p></div></aside></div>
+<p class="notice">Источник интерфейса — Frigate PWA: RecordingView, VideoControls, MotionReviewTimeline и mobile drawers. Все кадры и данные синтетические; воспроизведение — локальный таймер. Реальные видео, звук, API, экспорт и серверные статусы не подключены. Вспомогательные формы экспорта/поиска не воспроизведены. Сверка с развёрнутой версией PWA и browser-rendering пока не выполнены.</p>
+</main>
+<template id="panel-options"><div class="sheet-options" role="radiogroup" aria-label="Панель просмотра"><button class="sheet-option" role="radio" data-panel="timeline">Хронология</button><button class="sheet-option" role="radio" data-panel="events">События</button><button class="sheet-option" role="radio" data-panel="detail">Деталь</button></div></template>
+<div id="announcement" role="status" aria-live="polite"></div>
+<script>
+const icons={check:'<path d="m5 12 4 4L19 6"/>',person:'<circle cx="12" cy="5" r="2"/><path d="M12 8v7m-5-4 5-3 5 3m-5 4-4 6m4-6 4 6"/>',car:'<path d="m4 10 2-5h12l2 5v8H4zM4 10h16M7 14h2m6 0h2M6 18v2m12-2v2"/>',Live:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',Events:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8m-8 4h8m-8 4h5"/>',Settings:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>'};
+function icon(name){return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+icons[name]+'</svg>'}
+// Deliberately synthetic, inline illustrations: no private camera imagery or network requests.
+function scene(kind=0,person=false){const palettes=[['#7b8381','#4d5652','#9b9a8c'],['#777f7b','#414c45','#8b8d79'],['#77818a','#49575d','#909493']];const [sky,wall,ground]=palettes[kind%3];return `<svg class="scene" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="640" height="360" fill="${sky}"/><path d="M0 165 640 125v235H0" fill="${ground}"/><path d="M0 0h245v245L0 300Z" fill="${wall}"/><path d="M0 15 260 0v37L0 69" fill="#303a38"/><path d="M60 100h104v131H60z" fill="#283330"/><path d="M68 107h87v113H68z" fill="#59645c"/><path d="m245 245 395 65v50H117Z" fill="#b9b6a4" opacity=".5"/><path d="M368 110 640 66v89l-272 24Z" fill="#394b3e"/><path d="M380 93v96m38-103v97m38-104v99m38-104v98m38-104v98m38-105v99m38-105v100" stroke="#84917a" stroke-width="9"/><path d="M260 270 640 340M210 301l400 59M310 252l-66 108M400 268l-20 92M500 284l28 76" stroke="#797e72" stroke-width="2" opacity=".7"/><ellipse cx="550" cy="223" rx="63" ry="16" fill="#303a32" opacity=".3"/><path d="M513 211v-43m0 6-26-20m26 33 23-29" stroke="#4c5241" stroke-width="8"/><circle cx="510" cy="143" r="37" fill="#53664e"/>${person?'<ellipse cx="334" cy="297" rx="28" ry="7" fill="#0004"/><circle cx="333" cy="202" r="12" fill="#c0b6a2"/><path d="m321 219 24-2 10 41-16 5-22-4Z" fill="#354557"/><path d="m324 259-5 35m22-34 12 31" stroke="#2a3137" stroke-width="11"/><path d="m320 225-14 28m40-30 16 23" stroke="#354557" stroke-width="9"/>':''}</svg>`}
+const original=[{id:1,name:'Вход',age:'2 мин назад',object:'Человек',kind:0,ongoing:true},{id:2,name:'Двор',age:'8 мин назад',object:'Человек',kind:1},{id:3,name:'Въезд · северные ворота',age:'17 мин назад',object:'Автомобиль',kind:2},{id:4,name:'Боковой вход',age:'26 мин назад',object:'Человек',kind:0},{id:5,name:'Задний двор',age:'43 мин назад',object:'Человек',kind:1}];
+let reviews=original.map(x=>({...x})),current=null;const state=document.querySelector('#state'),review=document.querySelector('#review');
+function announce(text){const box=document.querySelector('#announcement');box.className='toast';box.textContent=text;clearTimeout(announce.timer);announce.timer=setTimeout(()=>{box.className='';box.textContent=''},3000)}
+function mark(id){reviews=reviews.filter(x=>x.id!==id);render();announce('Отмечено просмотренным · только в макете')}
+function renderCarousel(){review.replaceChildren();const mode=state.value;if(mode==='empty'||(!reviews.length&&mode!=='error'&&mode!=='loading')){review.hidden=true;return}review.hidden=false;const heading=document.createElement('div');heading.className='section-heading';heading.textContent='Непросмотренные';const period=document.createElement('span');period.textContent='За последний час';heading.append(period);review.append(heading);if(mode==='error'){const message=document.createElement('div');message.className='message';message.innerHTML='<span>Не удалось загрузить события</span><button>Повторить</button>';message.querySelector('button').onclick=()=>{state.value='populated';render();announce('Демонстрационная лента восстановлена')};review.append(message);return}const strip=document.createElement('div');strip.className='strip';strip.setAttribute('aria-label','Лента непросмотренных alerts');if(mode==='loading'){strip.setAttribute('aria-busy','true');strip.setAttribute('aria-label','Загрузка событий');for(let i=0;i<3;i++){const skeleton=document.createElement('div');skeleton.className='skeleton';strip.append(skeleton)}}else for(const item of reviews){const card=document.createElement('article');card.className='review-card';const open=document.createElement('button');open.className='open-review';open.setAttribute('aria-label',`Открыть событие: ${item.name}, ${item.object}, ${item.age}`);open.innerHTML=(mode==='thumbnail'&&item.id===1?'<div class="fallback">Превью недоступно</div>':scene(item.kind,true))+`<span class="age">${item.age}</span>`+(item.ongoing?'<span class="ongoing">Ещё идёт</span>':'');open.onclick=()=>openDetail(item);const info=document.createElement('div');info.className='card-info';const name=document.createElement('div');name.className='card-name';name.innerHTML=`<strong>${item.name}</strong><span>${item.object}</span>`;const check=document.createElement('button');check.className='mark';check.innerHTML=icon('check');check.title=`Отметить просмотренным: ${item.name}`;check.setAttribute('aria-label',check.title);check.onclick=()=>{const index=reviews.findIndex(x=>x.id===item.id);mark(item.id);const buttons=review.querySelectorAll('.mark');if(buttons.length)buttons[Math.min(index,buttons.length-1)].focus();else state.focus()};info.append(name,check);card.append(open,info);strip.append(card)}review.append(strip)}
+state.onchange=render;
+for(const [id,cls] of [['width','wide'],['text-size','large-text']])document.getElementById(id).onclick=function(){const on=document.querySelector('.device').classList.toggle(cls);this.setAttribute('aria-pressed',String(on));if(!historyView.hidden)requestAnimationFrame(()=>{renderTimeline();syncHistory(historyDemo.snapshot())})};
+document.querySelector('#reset').onclick=()=>{closeHistory();document.querySelector('#live-camera-view').hidden=true;viewedIds.clear();reviews=original.map(x=>({...x}));state.value='populated';render();announce('Демонстрация сброшена')};
+const cameras=[{name:'Вход',kind:0,tracking:true,object:'person',motion:true},{name:'Двор',kind:1},{name:'Въезд',kind:2,object:'car'},{name:'Боковой вход',kind:0}];for(const camera of cameras){const tile=document.createElement('div');tile.className='camera'+(camera.tracking?' tracking':'');tile.innerHTML=scene(camera.kind,camera.tracking)+`<span class="camera-label">${camera.name}${camera.motion?'<i class="motion" role="img" aria-label="Движение"></i>':''}</span>`+(camera.object?`<span class="objects" role="img" aria-label="${camera.object==='person'?'Человек':'Автомобиль'}">${icon(camera.object)}</span>`:'');document.querySelector('#cameras').append(tile)}for(const button of document.querySelectorAll('[data-nav]')){button.innerHTML=icon(button.dataset.nav)+button.dataset.nav;button.onclick=()=>announce('Макет Live · другие вкладки не подключены')}
+function createHistoryDemo(onChange, scheduler = {setInterval, clearInterval}) {
+  let state = {active:false, camera:'yard', timestamp:51836, rangeStart:-34080, rangeEnd:52320, playing:false, rate:1};
+  let timer = null;
+  const snapshot = () => ({...state});
+  const emit = () => onChange(snapshot());
+  function stopTimer() {
+    if (timer !== null) scheduler.clearInterval(timer);
+    timer = null;
+  }
+  function pause() { stopTimer(); state.playing = false; emit(); }
+  function start() {
+    if (!state.active || state.playing || state.timestamp >= state.rangeEnd) return;
+    state.playing = true;
+    timer = scheduler.setInterval(() => {
+      state.timestamp = Math.min(state.rangeEnd, state.timestamp + state.rate);
+      if (state.timestamp === state.rangeEnd) { stopTimer(); state.playing = false; }
+      emit();
+    }, 1000);
+    emit();
+  }
+  function open(item) {
+    stopTimer();
+    const requested = item.start - 4;
+    const timestamp = requested < state.rangeStart || requested > state.rangeEnd ? Math.max(state.rangeStart, state.rangeEnd - 60) : requested;
+    state = {...state, active:true, camera:item.camera, timestamp, playing:false};
+    emit();
+    start();
+  }
+  function seek(timestamp) {
+    if (!Number.isFinite(timestamp)) return;
+    state.timestamp = Math.max(state.rangeStart, Math.min(state.rangeEnd, timestamp));
+    if (state.timestamp === state.rangeEnd) { stopTimer(); state.playing = false; }
+    emit();
+  }
+  function setCamera(camera) { state.camera = camera; emit(); }
+  function setRate(rate) {
+    if (!Number.isFinite(rate) || rate <= 0 || rate > 16) return;
+    state.rate = rate;
+    emit();
+  }
+  function setRange(after, before) {
+    if (!Number.isFinite(after) || !Number.isFinite(before) || before <= after) return;
+    state.rangeStart = after;
+    state.rangeEnd = before;
+    if (state.timestamp < after || state.timestamp > before) state.timestamp = Math.max(after, before - 60);
+    emit();
+  }
+  function toggle() { state.playing ? pause() : start(); }
+  function close() { stopTimer(); state.playing = false; state.active = false; emit(); }
+  return {snapshot, open, seek, setCamera, setRate, setRange, toggle, pause, close};
+}
+function historyClock(timestamp) {
+  const value = ((Math.floor(timestamp) % 86400) + 86400) % 86400;
+  return [Math.floor(value / 3600), Math.floor(value / 60) % 60, value % 60].map(part => String(part).padStart(2, '0')).join(':');
+}
+
+const historyDemo = createHistoryDemo(syncHistory);
+const historyView = document.querySelector('#history-view');
+const liveShell = document.querySelector('#live-shell');
+const timelineScroll = document.querySelector('#timeline-scroll');
+const timelineRuler = document.querySelector('#timeline-ruler');
+const timelineMarks = document.querySelector('#timeline-marks');
+const sheetBackdrop = document.querySelector('#history-sheet-backdrop');
+const sheetContent = document.querySelector('#history-sheet-content');
+const historyControls = document.querySelector('#history-controls');
+const originalNotes = document.querySelector('#design-notes').innerHTML;
+const cameraIds = ['front', 'yard', 'driveway', 'side', 'backyard'];
+const cameraNames = Object.fromEntries(original.map((item, index) => [cameraIds[index], item.name]));
+const historyItems = original.map((item, index) => ({...item, camera:cameraIds[index], start:52320-Number.parseInt(item.age,10)*60, end:item.ongoing?null:52320-Number.parseInt(item.age,10)*60+52, severity:'alert'}));
+historyItems.push(
+  {id:6, camera:'yard', name:'Двор', object:'Автомобиль', kind:1, start:51090, end:51115, severity:'detection', age:'20 мин назад'},
+  {id:7, camera:'yard', name:'Двор', object:'Человек', kind:1, start:49990, end:50054, severity:'alert', age:'39 мин назад'},
+  {id:8, camera:'yard', name:'Двор', object:'Человек', kind:1, start:42240, end:42302, severity:'alert', age:'3 ч назад'},
+  {id:9, camera:'yard', name:'Двор', object:'Автомобиль', kind:1, start:-1800, end:-1740, severity:'detection', age:'Вчера'}
+);
+const viewedIds = new Set([6,8,9]);
+let activeHistory = null;
+let panelType = 'timeline';
+let zoomLevel = 0;
+const zoomLevels = [{step:30, spread:900}, {step:15, spread:300}, {step:5, spread:60}];
+let lastCamera = null;
+let lastPlaying = false;
+let hideControlsTimer = null;
+let lastPanelCamera = null;
+let liveBookmark = {top:0, left:0};
+let opener = null;
+let sheetOpener = null;
+let muted = true;
+let followPlayhead = true;
+let dragging = false;
+let pendingTimelineFrame = null;
+let sceneState = 'ready';
+let rangeLabel = 'Последние 24 часа';
+let detailSettings = {expand:true, offset:0};
+let reviewLabels = null;
+Object.assign(icons, {
+  back:'<path d="m14 5-7 7 7 7M7 12h14"/>',
+  video:'<rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-4v12l-6-4"/>',
+  flag:'<path d="M5 21V3m0 1c5-4 9 4 14 0v10c-5 4-9-4-14 0"/>',
+  gear:icons.Settings,
+  mute:'<path d="M11 4 6 9H3v6h3l5 5V4Zm5 5 5 6m0-6-5 6"/>',
+  volume:'<path d="M11 4 6 9H3v6h3l5 5V4Zm4 4c3 2 3 6 0 8m3-11c5 4 5 10 0 14"/>',
+  play:'<path d="m8 5 11 7-11 7Z"/>', pause:'<path d="M8 5v14M16 5v14"/>',
+  rewind:'<path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/>', forward:'<path d="M20 10a8 8 0 1 0-1 8m1-14v6h-6"/>',
+  snapshot:'<path d="M4 7h4l2-3h4l2 3h4v13H4Z"/><circle cx="12" cy="13" r="4"/>',
+  fullscreen:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v5m10-5v5M3 11h18"/>',
+  filter:'<path d="M3 5h18l-7 8v7l-4-2v-5Z"/>',
+  share:'<circle cx="5" cy="12" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="19" cy="19" r="3"/><path d="m8 10 8-4m-8 8 8 4"/>',
+  download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',
+  search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>'
+});
+for (const [id, name] of Object.entries({'history-back':'back','history-live':'video','history-camera':'video','history-panel-picker':'flag','history-settings':'gear','history-mute':'mute','history-play':'pause','history-snapshot':'snapshot','history-fullscreen':'fullscreen'})) document.getElementById(id).innerHTML = icon(name);
+for (const [id, name] of [['history-rewind','rewind'],['history-forward','forward']]) document.getElementById(id).innerHTML = '<span class="skip-icon">'+icon(name)+'<small>10</small></span>';
+
+function render() {
+  const strip = review.querySelector('.strip');
+  const left = strip?.scrollLeft || liveBookmark.left;
+  const top = document.querySelector('#live-scroll').scrollTop;
+  renderCarousel();
+  const nextStrip = review.querySelector('.strip');
+  if (nextStrip) nextStrip.scrollLeft = left;
+  document.querySelector('#live-scroll').scrollTop = top;
+}
+function openDetail(item) {
+  const entry = historyItems.find(value => value.id === item.id) || item;
+  if (historyView.hidden) {
+    liveBookmark = {top:document.querySelector('#live-scroll').scrollTop, left:review.querySelector('.strip')?.scrollLeft || 0};
+    opener = document.activeElement;
+  }
+  document.querySelector('#live-camera-view').hidden=true;
+  activeHistory = entry;
+  current = entry.id;
+  viewedIds.add(entry.id);
+  reviews = reviews.filter(value => value.id !== entry.id);
+  render();
+  liveShell.hidden = true;
+  historyView.hidden = false;
+  document.querySelector('#demo-screen').value = 'history';
+  document.querySelector('#design-notes').innerHTML = '<h2>History, как в PWA</h2><p>Back и Live слева; Frigate по центру; камеры, режим панели и настройки справа. Транспортная панель находится поверх видео.</p><h2>Архив, не короткий клип</h2><p>При входе: последние 24 часа, камера события, начало за 4 секунды до него. Временная шкала вертикальная; новое сверху.</p><h2>Камеры и режимы — через drawers</h2><p>Камера сохраняет момент времени. Флажок переключает Timeline / Events / Detail. Шестерёнка открывает действия и фильтры.</p><div class="note-rule"><p>Источник: RecordingView, HlsVideoPlayer, VideoControls и MotionReviewTimeline из Frigate PWA. Это браузерный макет будущего native UI, не работающая Android-функция.</p><p>Видео и данные синтетические. Админские/Frigate+ функции не показаны: условная конфигурация без этих возможностей.</p></div>';
+  followPlayhead = true;
+  lastCamera = null;
+  lastPanelCamera = null;
+  sceneState = document.querySelector('#demo-playback-state').value = 'ready';
+  historyDemo.open(entry);
+  setPanel(panelType);
+  document.querySelector('#history-back').focus({preventScroll:true});
+}
+function closeHistory() {
+  closeSheet(false);
+  clearTimeout(hideControlsTimer);
+  hideControlsTimer = null;
+  if (pendingTimelineFrame !== null) cancelAnimationFrame(pendingTimelineFrame);
+  pendingTimelineFrame = null;
+  historyDemo.close();
+  historyView.hidden = true;
+  historyView.classList.remove('full-video');
+  liveShell.hidden = false;
+  activeHistory = null;
+  current = null;
+  document.querySelector('#demo-screen').value = 'live';
+  document.querySelector('#design-notes').innerHTML = originalNotes;
+  document.querySelector('#live-scroll').scrollTop = liveBookmark.top;
+  const strip = review.querySelector('.strip');
+  if (strip) strip.scrollLeft = liveBookmark.left;
+  (opener?.isConnected ? opener : document.querySelector('#demo-screen')).focus({preventScroll:true});
+}
+function showControls(visible = true) {
+  clearTimeout(hideControlsTimer);
+  hideControlsTimer = null;
+  historyControls.hidden = !visible;
+  if (visible && historyDemo.snapshot().playing && document.querySelector('#history-rate-menu').hidden && !historyControls.contains(document.activeElement)) {
+    hideControlsTimer = setTimeout(() => { historyControls.hidden = true; }, 4000);
+  }
+}
+function currentCameraItems() {
+  const value = historyDemo.snapshot();
+  return historyItems.filter(item => item.camera === value.camera && item.start >= value.rangeStart && item.start <= value.rangeEnd && (reviewLabels === null || reviewLabels.includes(item.object))).sort((a,b) => b.start-a.start);
+}
+function syncHistory(value) {
+  if (!value.active) return;
+  if (lastCamera !== value.camera) {
+    const index = cameraIds.indexOf(value.camera);
+    document.querySelector('#history-illustration').innerHTML = scene(Math.max(0,index)%3,true).replace('xMidYMid slice','xMidYMid meet');
+    document.querySelector('#history-camera').setAttribute('aria-label','Выбрать камеру: '+cameraNames[value.camera]);
+    lastCamera = value.camera;
+    renderTimeline();
+    lastPanelCamera = null;
+  }
+  document.querySelector('#history-osd').textContent = cameraNames[value.camera]+'  '+historyClock(value.timestamp);
+  document.querySelector('#history-play').innerHTML = icon(value.playing?'pause':'play');
+  document.querySelector('#history-play').setAttribute('aria-label',value.playing?'Пауза':'Воспроизвести');
+  document.querySelector('#history-rate').textContent = value.rate+'x';
+  document.querySelector('#timeline-time').textContent = historyClock(value.timestamp);
+  document.querySelector('#timeline-handle').setAttribute('aria-label','Позиция '+historyClock(value.timestamp)+'. Перетащите для перемотки');
+  timelineScroll.setAttribute('aria-valuemin',value.rangeStart);
+  timelineScroll.setAttribute('aria-valuemax',value.rangeEnd);
+  timelineScroll.setAttribute('aria-valuenow',value.timestamp);
+  timelineScroll.setAttribute('aria-valuetext',historyClock(value.timestamp));
+  const y = (value.rangeEnd-value.timestamp)/zoomLevels[zoomLevel].step*8;
+  document.querySelector('#timeline-cursor').style.top = y+'px';
+  if (followPlayhead && !dragging && panelType === 'timeline' && timelineScroll.clientHeight > 0 && (y < timelineScroll.scrollTop+48 || y > timelineScroll.scrollTop+timelineScroll.clientHeight-48)) timelineScroll.scrollTop = Math.max(0,y-timelineScroll.clientHeight/2);
+  renderTimelineViewport();
+  if (lastPanelCamera !== value.camera) { renderPanelLists(); lastPanelCamera=value.camera; }
+  for (const card of document.querySelectorAll('[data-review-seek]')) {
+    const item = historyItems.find(row => row.id===Number(card.dataset.reviewSeek));
+    card.setAttribute('aria-current',String(!!item && value.timestamp >= item.start-4 && value.timestamp <= (item.end ?? value.rangeEnd)+4));
+  }
+  for (const row of document.querySelectorAll('[data-lifecycle-time]')) row.classList.toggle('active',Math.abs(Number(row.dataset.lifecycleTime)-value.timestamp)<8);
+  if (lastPlaying !== value.playing) { lastPlaying=value.playing; showControls(); }
+}
+function renderTimeline() {
+  const value = historyDemo.snapshot();
+  timelineRuler.style.height = Math.ceil((value.rangeEnd-value.rangeStart)/zoomLevels[zoomLevel].step)*8+'px';
+  renderTimelineViewport();
+}
+function renderTimelineViewport() {
+  if (historyView.hidden) return;
+  const value = historyDemo.snapshot();
+  const {step, spread} = zoomLevels[zoomLevel];
+  const count = Math.ceil((value.rangeEnd-value.rangeStart)/step);
+  const first = Math.max(0,Math.floor(timelineScroll.scrollTop/8)-20);
+  const last = Math.min(count,first+Math.ceil((timelineScroll.clientHeight || 440)/8)+40);
+  const items = currentCameraItems();
+  const rows=[];
+  for (let index=first; index<last; index++) {
+    const time=value.rangeEnd-index*step;
+    const item=items.find(entry => entry.start <= time+step && (entry.end ?? value.rangeEnd)>=time);
+    const gap=time>48000 && time<48360;
+    const motion=!!item || (index%43<3);
+    const width=motion?5+Math.round(Math.abs(Math.sin(index*1.7))*15):1;
+    const label=Math.floor(time/spread)!==Math.floor((time-step)/spread);
+    const text=historyClock(Math.floor(time/spread)*spread).slice(0,5);
+    rows.push('<div class="time-segment '+(gap?'gap':item?item.severity+(viewedIds.has(item.id)?' reviewed':''):'')+'" style="top:'+(index*8)+'px" title="'+historyClock(time)+' · '+(gap?'Нет записи':item?item.severity==='alert'?'Alert':'Detection':'Запись')+'">'+(!gap?'<i class="motion-line '+(motion?'active':'')+'" style="width:'+width+'px"></i><i class="motion-line second '+(motion?'active':'')+'" style="width:'+Math.max(1,width-3)+'px"></i>':'')+(label?'<i class="time-tick"></i><time class="time-label">'+text+'</time>':'')+'</div>');
+  }
+  timelineMarks.innerHTML=rows.join('');
+}
+function setPanel(mode) {
+  panelType=mode;
+  historyView.dataset.panel=mode;
+  document.querySelector('#history-timeline').hidden=mode!=='timeline';
+  document.querySelector('#history-events').hidden=mode!=='events';
+  document.querySelector('#history-detail').hidden=mode!=='detail';
+  document.querySelector('#history-panel').setAttribute('aria-label',mode==='timeline'?'Timeline':mode==='events'?'Events':'Detail');
+  if (mode==='timeline') { followPlayhead=true; renderTimeline(); syncHistory(historyDemo.snapshot()); }
+  else renderPanelLists();
+}
+function seekAndPlay(timestamp) {
+  followPlayhead=true;
+  historyDemo.seek(timestamp);
+  if (!historyDemo.snapshot().playing && sceneState==='ready') historyDemo.toggle();
+}
+function renderPanelLists() {
+  const items=currentCameraItems();
+  document.querySelector('#history-events').innerHTML=items.map(item=>'<button class="history-event" data-review-seek="'+item.id+'" aria-label="'+item.object+', '+historyClock(item.start)+'"><div class="event-image">'+scene(item.kind,item.object==='Человек')+'</div><span class="event-caption"><i class="severity-dot '+item.severity+'" title="'+item.severity+'"></i>'+icon(item.object==='Автомобиль'?'car':'person')+'<time>'+historyClock(item.start)+'</time></span><span class="event-age">'+item.age+'</span></button>').join('') || '<p>Нет событий за выбранный период</p>';
+  for (const button of document.querySelectorAll('[data-review-seek]')) button.onclick=()=>{const item=historyItems.find(row=>row.id===Number(button.dataset.reviewSeek));seekAndPlay(item.start-4);};
+  document.querySelector('#history-detail').innerHTML=items.map((item,index)=>'<details class="detail-card" '+(index===0&&detailSettings.expand?'open':'')+'><summary><i class="severity-dot '+item.severity+'"></i>'+icon(item.object==='Автомобиль'?'car':'person')+'<span>'+item.object+'</span><small>1 · '+(item.end?Math.round(item.end-item.start)+' с':'Ещё идёт')+'</small></summary><time class="detail-time">'+historyClock(item.start)+'</time>'+[['Обнаружен',0],['Вошёл в зону',6],['Активен',18],['Покинул зону',40]].filter(([,offset])=>!item.end||item.start+offset<item.end).map(([label,offset])=>'<button class="lifecycle-row" data-lifecycle-time="'+(item.start+offset)+'"><time>'+historyClock(item.start+offset)+'</time><span>'+label+'</span></button>').join('')+'</details>').join('')+'<details class="detail-settings"><summary>Настройки детализации</summary><label><input type="checkbox" id="detail-expand" '+(detailSettings.expand?'checked':'')+'>Всегда разворачивать активное</label><label for="detail-offset">Смещение аннотаций</label><input id="detail-offset" type="range" min="-5" max="5" step="0.1" value="'+detailSettings.offset+'" aria-label="Смещение аннотаций"></details>';
+  for (const button of document.querySelectorAll('[data-lifecycle-time]')) button.onclick=()=>seekAndPlay(Number(button.dataset.lifecycleTime));
+  document.querySelector('#detail-expand').onchange=event=>{detailSettings.expand=event.target.checked;};
+  document.querySelector('#detail-offset').oninput=event=>{detailSettings.offset=Number(event.target.value);};
+}
+function openSheet(content,label) {
+  clearTimeout(hideControlsTimer);
+  if(sheetBackdrop.hidden)sheetOpener=document.activeElement;
+  sheetContent.innerHTML=content;
+  document.querySelector('#history-sheet').setAttribute('aria-label',label);
+  sheetBackdrop.hidden=false;
+  liveShell.inert=true;
+  document.querySelector('.history-header').inert=true;
+  document.querySelector('.history-layout').inert=true;
+  sheetContent.querySelector('button,input,select')?.focus({preventScroll:true});
+}
+function closeSheet(restore=true) {
+  if (sheetBackdrop.hidden) return;
+  sheetBackdrop.hidden=true;
+  liveShell.inert=false;
+  document.querySelector('.history-header').inert=false;
+  document.querySelector('.history-layout').inert=false;
+  if (restore && sheetOpener?.isConnected) sheetOpener.focus({preventScroll:true});
+  showControls();
+}
+function openPanelSheet() {
+  openSheet(document.querySelector('#panel-options').innerHTML,'Режим панели просмотра');
+  for (const button of sheetContent.querySelectorAll('[data-panel]')) {
+    button.setAttribute('aria-checked',String(button.dataset.panel===panelType));
+    button.onclick=()=>{setPanel(button.dataset.panel);closeSheet();};
+  }
+}
+function openCameraSheet() {
+  openSheet('<div class="sheet-options" role="radiogroup" aria-label="Камеры">'+cameraIds.map(id=>'<button class="sheet-option" role="radio" data-camera="'+id+'" aria-checked="'+(historyDemo.snapshot().camera===id)+'">'+cameraNames[id]+'</button>').join('')+'</div>','Выбрать камеру');
+  for (const button of sheetContent.querySelectorAll('[data-camera]')) button.onclick=()=>{historyDemo.setCamera(button.dataset.camera);closeSheet();};
+}
+function openSettingsSheet() {
+  openSheet('<div class="settings-grid"><button class="sheet-option" id="history-export">'+icon('download')+'Экспорт</button><button class="sheet-option" id="history-date">'+icon('calendar')+'Календарь</button><button class="sheet-option" id="history-filter">'+icon('filter')+'Фильтр</button><button class="sheet-option" id="history-share">'+icon('share')+'Поделиться моментом</button><button class="sheet-option" id="history-motion-search">'+icon('search')+'Поиск движения</button></div><p class="sheet-description">'+rangeLabel+'</p>','Настройки просмотра');
+  document.querySelector('#history-date').onclick=()=>{
+    openSheet('<h2 class="sheet-title">Календарь</h2><p class="sheet-description">Демонстрационные записи: 29–30 октября. По умолчанию — последние 24 часа.</p><input class="sheet-input" id="history-date-input" type="date" value="2026-10-30" min="2026-10-29" max="2026-10-30"><div class="sheet-actions"><button id="history-last-day">Последние 24 часа</button><button id="history-date-apply">Применить</button></div>','Календарь');
+    document.querySelector('#history-last-day').onclick=()=>{rangeLabel='Последние 24 часа';historyDemo.setRange(-34080,52320);renderTimeline();renderPanelLists();closeSheet();};
+    document.querySelector('#history-date-apply').onclick=()=>{const day=document.querySelector('#history-date-input').value;if(!day)return;const yesterday=day==='2026-10-29';rangeLabel=yesterday?'29 октября':'30 октября';historyDemo.setRange(yesterday?-86400:0,yesterday?0:52320);renderTimeline();renderPanelLists();closeSheet();};
+  };
+  document.querySelector('#history-filter').onclick=openFilterSheet;
+  document.querySelector('#history-export').onclick=()=>showActionDemo('Экспорт','В PWA здесь выбираются границы экспорта на временной шкале. Этот прототип не создаёт файлы и не отправляет запросы.');
+  document.querySelector('#history-share').onclick=()=>showActionDemo('Поделиться моментом',cameraNames[historyDemo.snapshot().camera]+' · '+historyClock(historyDemo.snapshot().timestamp)+'. Настоящая ссылка на Frigate не создаётся.');
+  document.querySelector('#history-motion-search').onclick=()=>showActionDemo('Поиск движения','В PWA открывается поиск по области кадра. Эта вспомогательная форма не воспроизведена в данном макете просмотра.');
+}
+function openFilterSheet() {
+  let draft = reviewLabels === null ? null : [...reviewLabels];
+  const labels = ['Человек', 'Автомобиль'];
+  openSheet('<div class="filter-header"><button class="history-button" id="history-filter-back" aria-label="Назад к настройкам">'+icon('back')+'</button><h2 class="sheet-title">Фильтр</h2></div><label class="filter-switch">Все метки<input type="checkbox" role="switch" id="history-filter-all"></label>'+labels.map(label=>'<label class="filter-switch">'+label+'<input type="checkbox" role="switch" data-filter-label="'+label+'"></label>').join('')+'<div class="sheet-actions"><button id="history-filter-apply">Применить</button><button id="history-filter-reset">Сбросить</button></div>','Фильтр меток');
+  function syncSwitches() {
+    document.querySelector('#history-filter-all').checked = draft === null;
+    for (const input of sheetContent.querySelectorAll('[data-filter-label]')) input.checked = draft?.includes(input.dataset.filterLabel) ?? false;
+  }
+  document.querySelector('#history-filter-back').onclick=openSettingsSheet;
+  document.querySelector('#history-filter-all').onchange=event=>{if(event.target.checked)draft=null;syncSwitches();};
+  for (const input of sheetContent.querySelectorAll('[data-filter-label]')) input.onchange=()=>{
+    const label=input.dataset.filterLabel;
+    if(input.checked)draft=[...new Set([...(draft ?? []),label])];
+    else if(draft?.length>1)draft=draft.filter(value=>value!==label);
+    syncSwitches();
+  };
+  document.querySelector('#history-filter-reset').onclick=()=>{draft=null;syncSwitches();};
+  document.querySelector('#history-filter-apply').onclick=()=>{reviewLabels=draft;renderTimeline();renderPanelLists();openSettingsSheet();};
+  syncSwitches();
+}
+function showActionDemo(title,description) {
+  openSheet('<h2 class="sheet-title">'+title+'</h2><p class="sheet-description">'+description+'</p><div class="sheet-actions"><button id="close-action-demo">Закрыть</button></div>',title);
+  document.querySelector('#close-action-demo').onclick=()=>closeSheet();
+}
+function setDemoPlaybackState(value) {
+  sceneState=value;
+  const overlay=document.querySelector('#history-video-overlay');
+  overlay.hidden=value==='ready';
+  overlay.innerHTML=value==='buffering'?'<span class="spinner" aria-hidden="true"></span>':value==='missing'?'Нет записей для этого времени':'';
+  for(const id of ['history-play','history-rewind','history-forward'])document.getElementById(id).disabled=value!=='ready';
+  if(value!=='ready')historyDemo.pause();
+  showControls();
+}
+document.querySelector('#history-back').onclick=closeHistory;
+document.querySelector('#history-live').onclick=()=>{
+  const id=historyDemo.snapshot().camera;
+  closeHistory();
+  openLiveCamera(id);
+};
+document.querySelector('#history-camera').onclick=openCameraSheet;
+document.querySelector('#history-panel-picker').onclick=openPanelSheet;
+document.querySelector('#history-settings').onclick=openSettingsSheet;
+document.querySelector('#history-play').onclick=()=>historyDemo.toggle();
+document.querySelector('#history-rewind').onclick=()=>historyDemo.seek(historyDemo.snapshot().timestamp-10);
+document.querySelector('#history-forward').onclick=()=>historyDemo.seek(historyDemo.snapshot().timestamp+10);
+document.querySelector('#history-mute').onclick=()=>{muted=!muted;document.querySelector('#history-mute').innerHTML=icon(muted?'mute':'volume');document.querySelector('#history-mute').setAttribute('aria-label',muted?'Включить звук':'Выключить звук');document.querySelector('#history-volume').hidden=muted;showControls();};
+document.querySelector('#history-picture').onclick=event=>{if(!event.target.closest('button,input,.rate-menu'))showControls(historyControls.hidden);};
+historyControls.addEventListener('click',event=>event.stopPropagation());
+historyControls.addEventListener('focusin',()=>{clearTimeout(hideControlsTimer);historyControls.hidden=false;});
+historyControls.addEventListener('focusout',()=>showControls());
+document.querySelector('#history-rate').onclick=()=>{
+  const menu=document.querySelector('#history-rate-menu');
+  menu.hidden=!menu.hidden;
+  document.querySelector('#history-rate').setAttribute('aria-expanded',String(!menu.hidden));
+  clearTimeout(hideControlsTimer);
+  menu.innerHTML=[0.5,1,2,4,8,16].map(rate=>'<button role="menuitemradio" aria-checked="'+(historyDemo.snapshot().rate===rate)+'" data-rate="'+rate+'">'+rate+'x</button>').join('');
+  for(const button of menu.querySelectorAll('[data-rate]'))button.onclick=()=>{historyDemo.setRate(Number(button.dataset.rate));menu.hidden=true;document.querySelector('#history-rate').setAttribute('aria-expanded','false');document.querySelector('#history-rate').focus();showControls();};
+};
+document.querySelector('#history-snapshot').onclick=()=>showActionDemo('Снимок кадра','В настоящем PWA сохраняется текущий кадр. Здесь синтетическая иллюстрация, загрузка файла не выполняется.');
+document.querySelector('#history-fullscreen').onclick=()=>{historyView.classList.toggle('full-video');showControls();};
+sheetBackdrop.onclick=event=>{if(event.target===sheetBackdrop)closeSheet();};
+function timelineSeekAt(clientY) {
+  const rect=timelineScroll.getBoundingClientRect();
+  const value=historyDemo.snapshot();
+  return value.rangeEnd-(timelineScroll.scrollTop+clientY-rect.top)/8*zoomLevels[zoomLevel].step;
+}
+timelineScroll.onclick=event=>{if(!event.target.closest('#timeline-handle')&&!dragging){followPlayhead=true;historyDemo.seek(Math.round(timelineSeekAt(event.clientY)));}};
+timelineScroll.onscroll=()=>{
+  if(pendingTimelineFrame!==null)return;
+  pendingTimelineFrame=requestAnimationFrame(()=>{pendingTimelineFrame=null;renderTimelineViewport();});
+};
+timelineScroll.addEventListener('wheel',()=>{followPlayhead=false;},{passive:true});
+timelineScroll.addEventListener('touchstart',event=>{if(!event.target.closest('#timeline-handle'))followPlayhead=false;},{passive:true});
+const handle=document.querySelector('#timeline-handle');
+handle.onpointerdown=event=>{event.preventDefault();event.stopPropagation();dragging=true;followPlayhead=false;handle.setPointerCapture(event.pointerId);document.querySelector('#timeline-cursor').classList.add('dragging');};
+handle.onpointermove=event=>{if(dragging)historyDemo.seek(Math.round(timelineSeekAt(event.clientY)));};
+function finishDrag(){if(!dragging)return;dragging=false;followPlayhead=true;document.querySelector('#timeline-cursor').classList.remove('dragging');syncHistory(historyDemo.snapshot());}
+handle.onpointerup=finishDrag;handle.onpointercancel=finishDrag;
+function setZoom(delta){zoomLevel=Math.max(0,Math.min(2,zoomLevel+delta));document.querySelector('#zoom-in').disabled=zoomLevel===2;document.querySelector('#zoom-out').disabled=zoomLevel===0;renderTimeline();const value=historyDemo.snapshot();timelineScroll.scrollTop=Math.max(0,(value.rangeEnd-value.timestamp)/zoomLevels[zoomLevel].step*8-timelineScroll.clientHeight/2);syncHistory(value);}
+document.querySelector('#zoom-in').onclick=()=>setZoom(1);
+document.querySelector('#zoom-out').onclick=()=>setZoom(-1);
+timelineScroll.onkeydown=event=>{if(['ArrowUp','ArrowDown','PageUp','PageDown'].includes(event.key)){event.preventDefault();const sign=event.key==='ArrowUp'||event.key==='PageUp'?1:-1;historyDemo.seek(historyDemo.snapshot().timestamp+sign*zoomLevels[zoomLevel].step*(event.key.startsWith('Page')?10:1));followPlayhead=true;}};
+document.querySelector('#demo-screen').onchange=event=>event.target.value==='live'?closeHistory():openDetail(original[1]);
+document.querySelector('#demo-playback-state').onchange=event=>{const value=event.target.value;if(historyView.hidden)openDetail(original[1]);event.target.value=value;setDemoPlaybackState(value);};
+document.addEventListener('visibilitychange',()=>{if(document.hidden){historyDemo.pause();clearTimeout(hideControlsTimer);}});
+window.addEventListener('pagehide',()=>{historyDemo.close();clearTimeout(hideControlsTimer);if(pendingTimelineFrame!==null)cancelAnimationFrame(pendingTimelineFrame);});
+window.addEventListener('resize',()=>{if(!historyView.hidden)renderTimelineViewport();});
+document.addEventListener('keydown',event=>{
+  if(historyView.hidden)return;
+  if(event.key==='Escape'){
+    if(!sheetBackdrop.hidden){closeSheet();return;}
+    if(historyView.classList.contains('full-video')){historyView.classList.remove('full-video');return;}
+    if(!document.querySelector('#history-rate-menu').hidden){document.querySelector('#history-rate-menu').hidden=true;document.querySelector('#history-rate').focus();return;}
+    closeHistory();return;
+  }
+  if(!sheetBackdrop.hidden){
+    if(event.key==='Tab'){
+      const focusable=[...sheetContent.querySelectorAll('button,input,select')].filter(item=>!item.disabled);
+      const first=focusable[0],last=focusable.at(-1);
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+    }
+    return;
+  }
+  if(event.target.closest('input,select,button,[role=slider]'))return;
+  if(event.key===' '){event.preventDefault();historyDemo.toggle();}
+  if(event.key==='ArrowLeft')historyDemo.seek(historyDemo.snapshot().timestamp-10);
+  if(event.key==='ArrowRight')historyDemo.seek(historyDemo.snapshot().timestamp+10);
+});
+
+function openLiveCamera(camera){document.querySelector('#live-camera-view').hidden=false;document.querySelector('#live-camera-back').innerHTML=icon('back');document.querySelector('#live-camera-name').textContent=cameraNames[camera];document.querySelector('#live-camera-frame').innerHTML=scene(Math.max(0,cameraIds.indexOf(camera))%3,true).replace('xMidYMid slice','xMidYMid meet');document.querySelector('#live-camera-back').focus({preventScroll:true});document.querySelector('#live-camera-back').onclick=()=>{document.querySelector('#live-camera-view').hidden=true;};}
+
+render();
+openDetail(original[1]);
+</script>
+</body>
+</html>

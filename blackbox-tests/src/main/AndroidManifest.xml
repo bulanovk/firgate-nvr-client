@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Тестовый APK ходит только на mock через adb reverse (loopback). -->
+    <!-- Видимость пакета для getLaunchIntentForPackage (Android 11+). -->
+    <queries>
+        <package android:name="com.frigate.android.blackbox" />
+    </queries>
+    <application android:usesCleartextTraffic="true" />
+</manifest>
