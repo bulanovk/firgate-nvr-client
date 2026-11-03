@@ -1,0 +1,90 @@
+name: Publish test APK
+
+# Publishes the debug APK of every green push to main as a GitHub pre-release.
+#
+# This is a separate workflow (not a job of ci.yml) so that pull requests do not show a skipped
+# "publish" check. It runs after the CI workflow finished, so the tests are not repeated here.
+# GitHub runs `workflow_run` workflows only from the default branch, so changes to this file
+# take effect after they are merged into main.
+#
+# The APK has to be signed with the same debug key as the builds on the phone, otherwise Android
+# refuses to install it over the existing app (and uninstalling would erase the app data). A
+# runner generates a fresh debug key on every run, so the key comes from the repository secret
+# DEBUG_KEYSTORE_BASE64 (base64 of ~/.android/debug.keystore).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-test-apk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish test APK
+    # Only a successful CI run of a push to main of this repository. The event and repository
+    # checks matter: a pull request from a fork branch named `main` also reports head branch
+    # `main`, and it must never reach the signing key.
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      # The commit CI has tested; GITHUB_SHA here is the current head of main, which may be newer.
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      CI_RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Restore the debug signing key
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "::error::The secret DEBUG_KEYSTORE_BASE64 is not set. Without it the APK would get a random key and could not update the installed app."
+            exit 1
+          fi
+          mkdir -p "$HOME/.android"
+          printf '%s' "$DEBUG_KEYSTORE_BASE64" | base64 -d > "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+
+      - name: Build the test APK
+        run: ./gradlew assembleDebug "-PappVersionSuffix=-test.${CI_RUN_NUMBER}+${HEAD_SHA::7}"
+
+      - name: Show the signing certificate
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | grep 'certificate SHA-256'
+
+      - name: Publish the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="test-${CI_RUN_NUMBER}"
+          apk="frigate-android-${tag}-${HEAD_SHA::7}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$apk"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$apk" --clobber
+          else
+            gh release create "$tag" "$apk" --prerelease --target "$HEAD_SHA" \
+              --title "Test build ${CI_RUN_NUMBER}" \
+              --notes "Test build of main at ${HEAD_SHA}. Debug-signed, not for production."
+          fi
