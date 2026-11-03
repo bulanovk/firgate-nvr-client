@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Official Frigate artwork: https://github.com/blakeblackshear/frigate/blob/dev/web/public/images/android-chrome-512x512.png
+     Foreground: 68 dp artwork centered in a 108 dp adaptive layer, preserving mask-safe padding. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@android:color/white" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

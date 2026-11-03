@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Frigate · Просмотр события</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;color:#f4f4f5;background:#111214;font-size:16px;--muted:#a7a9ae;--line:#34363b;--accent:#fb923c}*{box-sizing:border-box}body{margin:0}button,select{font:inherit;color:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}.studio{max-width:1140px;margin:auto;padding:32px 24px}.eyebrow{color:var(--accent);font-size:11px;letter-spacing:.16em;font-weight:700}h1{font-size:clamp(24px,4vw,36px);font-weight:600;letter-spacing:-.04em;margin:10px 0}p{color:var(--muted);line-height:1.55}.intro{max-width:680px}.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:24px 0}.controls label{font-size:13px;color:#c5c7cb;display:flex;gap:8px;align-items:center;flex-wrap:wrap}select,.control{background:#212226;border:1px solid #414349;border-radius:8px;padding:10px;min-height:48px}.control[aria-pressed=true]{border-color:var(--accent);background:#38281d}.workbench{display:flex;align-items:flex-start;gap:40px}.device{width:390px;max-width:100%;flex-shrink:0;border:1px solid #414349;border-radius:28px;background:#000;overflow:hidden;box-shadow:0 24px 90px #0006}.device.wide{width:760px}.statusbar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;color:#d5d6d8}.app{height:740px;display:flex;flex-direction:column}.toolbar{min-height:56px;display:flex;align-items:center;padding:8px 16px;font-size:23px;font-weight:600;letter-spacing:-.03em}.scroll{overflow-y:auto;flex:1;min-height:0;padding:0 8px 8px;scrollbar-width:thin}.review{padding-bottom:16px}.section-heading{display:flex;gap:8px;align-items:center;margin:2px 4px 10px;font-size:13px;font-weight:550}.section-heading span{font-size:11px;color:var(--muted);font-weight:400;margin-left:auto}.strip{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;padding:2px 2px 8px}.review-card{width:164px;flex:0 0 164px;scroll-snap-align:start;position:relative}.open-review{position:relative;display:block;width:100%;height:100px;border:0;padding:0;border-radius:8px;overflow:hidden;background:#26292b;text-align:left}.scene{width:100%;height:100%;display:block}.open-review:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 35%,#000c)}.age{position:absolute;bottom:7px;left:8px;z-index:1;font-size:11px;text-shadow:0 1px 3px #000}.ongoing{position:absolute;top:6px;left:6px;z-index:1;background:#21180feb;border:1px solid #976333;border-radius:4px;padding:3px 5px;font-size:10px;color:#ffca9d}.card-info{display:flex;align-items:center;min-height:48px;gap:4px}.card-name{min-width:0;flex:1;font-size:11px;line-height:1.4;color:#d9dadd}.card-name strong{font-size:12px;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-name span{color:var(--muted)}.mark{flex:0 0 48px;width:48px;height:48px;border:0;border-radius:8px;background:transparent;color:#bbbfc5;display:grid;place-items:center}.mark:hover{background:#27292c;color:white}svg.icon{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.grid{display:grid;grid-template-columns:1fr;gap:8px}.wide .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.camera{aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:8px;background:#303537}.camera.tracking{outline:3px solid #ef8b42;outline-offset:-3px}.camera-label,.objects{position:absolute;top:9px;background:#25262bde;backdrop-filter:blur(5px);border-radius:5px;font-size:11px;padding:5px 7px;color:white}.camera-label{right:9px;max-width:70%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.objects{left:9px;display:flex;gap:5px;align-items:center}.objects .icon{width:16px;height:16px}.motion{display:inline-block;width:6px;height:6px;background:#fa5757;border-radius:50%;margin-left:6px;vertical-align:middle}.nav{min-height:72px;background:#1d1e21;border-top:1px solid #303136;display:flex;justify-content:space-around;padding:6px 8px 10px}.nav button{border:0;background:transparent;min-width:72px;min-height:52px;color:#9da1a8;font-size:10px;display:flex;align-items:center;flex-direction:column;justify-content:center;gap:4px}.nav button[aria-current=page]{color:white}.nav button[aria-current=page] .icon{background:#45474f;border-radius:6px;width:40px;padding:3px;height:26px}.notes{max-width:290px;font-size:13px;padding-top:16px}.notes h2{font-size:16px;font-weight:550;margin:0 0 8px}.notes p{margin:0 0 24px}.note-rule{border-top:1px solid var(--line);padding-top:20px}.message{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12px;color:#d7d8db}.message button{min-height:48px;background:#292b30;border:0;border-radius:6px;padding:8px 12px}.skeleton{width:164px;flex:0 0 164px;height:148px;background:linear-gradient(#24262b 100px,#151619 100px);border-radius:8px}.fallback{height:100%;display:grid;place-items:center;font-size:11px;color:#ccc;background:#292d31}.notice{font-size:12px;color:var(--muted);margin-top:16px}.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#eee;color:#17181a;padding:12px 20px;border-radius:10px;max-width:90%;box-shadow:0 5px 30px #0008;z-index:10;font-size:13px}dialog{background:#17191c;border:1px solid #52565d;color:#eee;border-radius:16px;padding:20px;max-width:560px;width:calc(100% - 32px)}dialog::backdrop{background:#000b}dialog h2{font-size:20px;margin:8px 0}dialog .preview{aspect-ratio:16/9;overflow:hidden;border-radius:8px}dialog button{background:#34373e;border:0;border-radius:8px;min-height:48px;padding:10px 16px}dialog .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:20px}.large-text .app{font-size:125%}.large-text .section-heading{font-size:16px;flex-wrap:wrap}.large-text .card-name strong{font-size:15px}.large-text .card-name span,.large-text .age{font-size:14px}.large-text .camera-label{font-size:14px}@media(max-width:850px){.workbench{flex-wrap:wrap;gap:20px}.notes{max-width:600px}.studio{padding:20px 12px}.device.wide{width:100%}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+[hidden]{display:none!important}
+.workbench{flex-wrap:wrap}
+.recording-screen{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;padding:0 8px 24px}
+.toolbar.recording-toolbar{gap:8px;padding:4px 8px;align-items:center}
+.back-button,.player-button{border:0;background:transparent;color:#e9e9eb;min-width:48px;min-height:48px;display:inline-grid;place-items:center;border-radius:50%;padding:0}
+.back-button:hover,.player-button:hover{background:#25272b}
+.route-title{min-width:0;flex:1}.route-title strong{display:block;font-size:18px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550;letter-spacing:-.02em}
+.route-title small{display:block;font-size:11px;color:#a7a9ae;font-weight:400;letter-spacing:0}
+.recording-frame{aspect-ratio:16/9;position:relative;border-radius:8px;overflow:hidden;background:#191c20}
+.recording-frame .scene{object-fit:contain}.recording-frame>div:first-child{width:100%;height:100%}
+.recording-frame:after{content:"";position:absolute;inset:0;background:linear-gradient(#0005,transparent 35%,transparent 70%,#0004);pointer-events:none}
+.recording-badge{position:absolute;top:12px;left:12px;z-index:1;color:#f5f5f6;background:#1c1f23cc;border-radius:4px;padding:4px 6px;font-size:10px;letter-spacing:.08em}
+.recording-clock{position:absolute;bottom:10px;left:12px;z-index:1;font-size:11px;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px #000}
+.recording-overlay{position:absolute;inset:0;background:#11161cda;z-index:2;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:12px;text-align:center;color:#ededf0;font-size:13px;line-height:1.4}
+.recording-overlay>p{font-size:11px;margin:0;color:#b8bcc4;max-width:260px}
+.recording-overlay button{border:1px solid #53575e;background:#292d33;color:white;border-radius:7px;padding:8px 16px;min-height:48px}
+.spinner{height:24px;width:24px;border:2px solid #535963;border-top-color:#e7e9ec;border-radius:50%;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.transport{display:flex;align-items:center;justify-content:center;gap:24px;padding:18px 8px 2px}
+.player-button.seek-button{display:flex;flex-direction:column;gap:1px;font-size:9px;line-height:1.2;width:56px;height:56px}
+.player-button.seek-button .icon{width:22px;height:22px}
+.player-button.primary{background:#f4f4f5;color:#17191d;width:60px;height:60px}
+.player-button.primary .icon{width:25px;height:25px;stroke-width:2}
+.player-button:disabled{opacity:.35;cursor:default}
+.seek-area{padding:0 12px}
+#seek{display:block;width:100%;min-height:48px;margin:0;accent-color:#e9a16c;cursor:pointer}
+#seek:focus-visible{outline:2px solid #93c5fd;outline-offset:2px;border-radius:3px}
+#seek:disabled{opacity:.35;cursor:default}
+.time-labels{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums;color:#a7a9ae;font-size:11px;margin-top:-3px}
+.playback-context{display:flex;justify-content:space-between;align-items:center;padding:16px 12px 18px;gap:8px;font-size:11px;color:#989da6}
+.playback-context strong{font-weight:400;color:#c1c5cc}
+.event-meta{border-top:1px solid #282b30;padding:20px 12px 0}
+.event-title{display:flex;align-items:center;gap:8px}.event-title .icon{width:20px;height:20px;color:#d3d5da}
+.event-title h2{font-size:20px;font-weight:550;margin:0;letter-spacing:-.02em}
+.event-date{font-size:12px;color:#a7a9ae;line-height:1.7;margin:8px 0 18px}
+.review-status{display:flex;align-items:center;gap:8px;min-height:48px;background:#202329;border:1px solid #3d4149;color:#e9eaec;border-radius:8px;padding:8px 12px;text-align:left;font-size:12px}
+.review-status .icon{width:18px;height:18px}
+.review-status:disabled{border-color:transparent;background:#16191c;color:#abb4ae;cursor:default}
+.ongoing-note{display:flex;gap:10px;align-items:flex-start;padding:12px;margin:0 0 16px;border:1px solid #5b4636;border-radius:8px;background:#241c15;color:#e6b690;font-size:12px;line-height:1.6}
+.ongoing-note p{margin:0;color:#c2ad9e;font-size:11px}
+.ongoing-note button{display:block;background:transparent;border:0;color:#ffcb9f;min-height:48px;padding:8px 0;text-align:left;font-size:12px;cursor:pointer}
+.player-note{font-size:11px;color:#a7a9ae;line-height:1.65;margin:18px 0 0}
+.large-text .route-title strong{font-size:21px}.large-text .route-title small,.large-text .event-date,.large-text .review-status,.large-text .player-note{font-size:15px}
+.large-text .time-labels,.large-text .playback-context,.large-text .recording-clock{font-size:14px}
+.wide .recording-frame{max-width:100%;margin:auto}
+.wide .recording-screen{padding-left:16px;padding-right:16px}
+@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+</style>
+</head>
+<body>
+<main class="studio">
+<div class="intro"><div class="eyebrow">FRIGATE / DESIGN PREVIEW</div><h1>Событие. Нужный момент.</h1><p>Макет проигрывателя: откройте запись из карусели, поставьте на паузу, перемотайте и вернитесь в Live. Всё работает только локально.</p></div>
+<div class="controls" aria-label="Настройки демонстрации"><label>Экран <select id="screen"><option value="live">Live · принят</option><option value="recording" selected>Запись события</option></select></label><label>Запись <select id="recording-mode"><option value="ready">Доступна</option><option value="buffering">Загрузка</option><option value="missing">Пока нет записи</option><option value="error">Ошибка</option><option value="ongoing">Событие ещё идёт</option></select></label><label>Лента <select id="state"><option value="populated">Непросмотренные</option><option value="empty">Всё просмотрено</option><option value="loading">Загрузка</option><option value="error">Ошибка загрузки</option><option value="thumbnail">Превью недоступно</option></select></label><button class="control" id="width" aria-pressed="false">Широкий экран</button><button class="control" id="text-size" aria-pressed="false">Крупный текст</button><button class="control" id="reset">Сбросить демо</button></div>
+<div class="workbench"><section class="device" aria-label="Макет экрана Android"><div class="statusbar"><span>14:32</span><span>▰ &nbsp; 86%</span></div><div class="app"><header class="toolbar" id="app-toolbar">Live</header><div class="scroll" id="live-scroll"><section id="review" class="review" aria-label="Непросмотренные события"></section><div class="grid" id="cameras"></div></div><section class="recording-screen" id="recording-screen" aria-label="Запись события" hidden>
+  <div class="recording-frame">
+    <div id="recording-image"></div>
+    <span class="recording-badge">ЗАПИСЬ</span>
+    <time class="recording-clock" id="recording-clock"></time>
+    <div class="recording-overlay" id="recording-overlay" role="status" hidden></div>
+  </div>
+  <div class="transport" role="group" aria-label="Управление записью">
+    <button class="player-button seek-button" id="seek-back" aria-label="Назад на 10 секунд"></button>
+    <button class="player-button primary" id="play-pause" aria-label="Воспроизвести"></button>
+    <button class="player-button seek-button" id="seek-forward" aria-label="Вперёд на 10 секунд"></button>
+  </div>
+  <div class="seek-area">
+    <input type="range" id="seek" min="0" max="52" step="1" value="8" aria-label="Позиция в записи">
+    <div class="time-labels"><span id="position">00:08</span><span id="duration">00:52</span></div>
+  </div>
+  <div class="playback-context"><span id="playback-caption">На паузе</span><strong>1× · Без звука</strong></div>
+  <div class="event-meta">
+    <div class="event-title"><span id="event-object-icon" aria-hidden="true"></span><h2 id="event-object"></h2></div>
+    <p class="event-date" id="event-date"></p>
+    <div class="ongoing-note" id="ongoing-note" hidden><div><strong>Событие ещё идёт</strong><p>Доступна только уже записанная часть.</p><button id="refresh-recording">Обновить доступную запись</button></div></div>
+    <button class="review-status" id="recording-mark"></button>
+    <p class="player-note">Запись начинается за 4 секунды до события. Перемотка — в пределах этого фрагмента, не по всему архиву.</p>
+  </div>
+</section><nav class="nav" aria-label="Основная навигация"><button aria-current="page" data-nav="Live"></button><button data-nav="Events"></button><button data-nav="Settings"></button></nav></div></section>
+<aside class="notes" id="design-notes"><h2>События не заслоняют эфир</h2><p>Новые — слева. Следующая карточка видна частично: лента листается вручную, без автопрокрутки.</p><h2>Отметка — отдельное действие</h2><p>Нажмите ✓, чтобы убрать событие. Прокрутка и появление карточки ничего не отмечают. Нажатие на превью открывает демонстрационный просмотр.</p><div class="note-rule"><h2>Как в PWA</h2><p>Непросмотренные alerts за последний час, до 10. Когда список пуст, лента полностью скрывается.</p><p>Все изображения — условные иллюстрации. Видео, API и изменение статусов на сервере не подключены.</p></div></aside></div>
+<p class="notice">Интерактивный макет, не видеоплеер: кадр — синтетическая иллюстрация, прогресс моделируется таймером. Реальное видео, звук, API и изменение статусов на сервере не подключены. Принятый макет карусели сохранён отдельно.</p>
+</main>
+<div id="announcement" role="status" aria-live="polite"></div>
+<script>
+const icons={check:'<path d="m5 12 4 4L19 6"/>',person:'<circle cx="12" cy="5" r="2"/><path d="M12 8v7m-5-4 5-3 5 3m-5 4-4 6m4-6 4 6"/>',car:'<path d="m4 10 2-5h12l2 5v8H4zM4 10h16M7 14h2m6 0h2M6 18v2m12-2v2"/>',Live:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',Events:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8m-8 4h8m-8 4h5"/>',Settings:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>'};
+function icon(name){return '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+icons[name]+'</svg>'}
+// Deliberately synthetic, inline illustrations: no private camera imagery or network requests.
+function scene(kind=0,person=false){const palettes=[['#7b8381','#4d5652','#9b9a8c'],['#777f7b','#414c45','#8b8d79'],['#77818a','#49575d','#909493']];const [sky,wall,ground]=palettes[kind%3];return `<svg class="scene" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="640" height="360" fill="${sky}"/><path d="M0 165 640 125v235H0" fill="${ground}"/><path d="M0 0h245v245L0 300Z" fill="${wall}"/><path d="M0 15 260 0v37L0 69" fill="#303a38"/><path d="M60 100h104v131H60z" fill="#283330"/><path d="M68 107h87v113H68z" fill="#59645c"/><path d="m245 245 395 65v50H117Z" fill="#b9b6a4" opacity=".5"/><path d="M368 110 640 66v89l-272 24Z" fill="#394b3e"/><path d="M380 93v96m38-103v97m38-104v99m38-104v98m38-104v98m38-105v99m38-105v100" stroke="#84917a" stroke-width="9"/><path d="M260 270 640 340M210 301l400 59M310 252l-66 108M400 268l-20 92M500 284l28 76" stroke="#797e72" stroke-width="2" opacity=".7"/><ellipse cx="550" cy="223" rx="63" ry="16" fill="#303a32" opacity=".3"/><path d="M513 211v-43m0 6-26-20m26 33 23-29" stroke="#4c5241" stroke-width="8"/><circle cx="510" cy="143" r="37" fill="#53664e"/>${person?'<ellipse cx="334" cy="297" rx="28" ry="7" fill="#0004"/><circle cx="333" cy="202" r="12" fill="#c0b6a2"/><path d="m321 219 24-2 10 41-16 5-22-4Z" fill="#354557"/><path d="m324 259-5 35m22-34 12 31" stroke="#2a3137" stroke-width="11"/><path d="m320 225-14 28m40-30 16 23" stroke="#354557" stroke-width="9"/>':''}</svg>`}
+const original=[{id:1,name:'Вход',age:'2 мин назад',object:'Человек',kind:0,ongoing:true},{id:2,name:'Двор',age:'8 мин назад',object:'Человек',kind:1},{id:3,name:'Въезд · северные ворота',age:'17 мин назад',object:'Автомобиль',kind:2},{id:4,name:'Боковой вход',age:'26 мин назад',object:'Человек',kind:0},{id:5,name:'Задний двор',age:'43 мин назад',object:'Человек',kind:1}];
+let reviews=original.map(x=>({...x})),current=null;const state=document.querySelector('#state'),review=document.querySelector('#review');
+function announce(text){const box=document.querySelector('#announcement');box.className='toast';box.textContent=text;clearTimeout(announce.timer);announce.timer=setTimeout(()=>{box.className='';box.textContent=''},3000)}
+function mark(id){reviews=reviews.filter(x=>x.id!==id);render();announce('Отмечено просмотренным · только в макете')}
+function renderReviewCards(){review.replaceChildren();const mode=state.value;if(mode==='empty'||(!reviews.length&&mode!=='error'&&mode!=='loading')){review.hidden=true;return}review.hidden=false;const heading=document.createElement('div');heading.className='section-heading';heading.textContent='Непросмотренные';const period=document.createElement('span');period.textContent='За последний час';heading.append(period);review.append(heading);if(mode==='error'){const message=document.createElement('div');message.className='message';message.innerHTML='<span>Не удалось загрузить события</span><button>Повторить</button>';message.querySelector('button').onclick=()=>{state.value='populated';render();announce('Демонстрационная лента восстановлена')};review.append(message);return}const strip=document.createElement('div');strip.className='strip';strip.setAttribute('aria-label','Лента непросмотренных alerts');if(mode==='loading'){strip.setAttribute('aria-busy','true');strip.setAttribute('aria-label','Загрузка событий');for(let i=0;i<3;i++){const skeleton=document.createElement('div');skeleton.className='skeleton';strip.append(skeleton)}}else for(const item of reviews){const card=document.createElement('article');card.className='review-card';const open=document.createElement('button');open.className='open-review';open.setAttribute('aria-label',`Открыть событие: ${item.name}, ${item.object}, ${item.age}`);open.innerHTML=(mode==='thumbnail'&&item.id===1?'<div class="fallback">Превью недоступно</div>':scene(item.kind,true))+`<span class="age">${item.age}</span>`+(item.ongoing?'<span class="ongoing">Ещё идёт</span>':'');open.onclick=()=>openDetail(item);const info=document.createElement('div');info.className='card-info';const name=document.createElement('div');name.className='card-name';name.innerHTML=`<strong>${item.name}</strong><span>${item.object}</span>`;const check=document.createElement('button');check.className='mark';check.innerHTML=icon('check');check.title=`Отметить просмотренным: ${item.name}`;check.setAttribute('aria-label',check.title);check.onclick=()=>{const index=reviews.findIndex(x=>x.id===item.id);mark(item.id);const buttons=review.querySelectorAll('.mark');if(buttons.length)buttons[Math.min(index,buttons.length-1)].focus();else state.focus()};info.append(name,check);card.append(open,info);strip.append(card)}review.append(strip)}
+// Recording screen interactions are defined below.
+state.onchange=render;
+for(const [id,cls] of [['width','wide'],['text-size','large-text']])document.getElementById(id).onclick=function(){const on=document.querySelector('.device').classList.toggle(cls);this.setAttribute('aria-pressed',String(on))};
+document.querySelector('#reset').onclick=()=>{closeRecording();reviews=original.map(x=>({...x}));state.value='populated';render();announce('Демонстрация сброшена')};
+const cameras=[{name:'Вход',kind:0,tracking:true,object:'person',motion:true},{name:'Двор',kind:1},{name:'Въезд',kind:2,object:'car'},{name:'Боковой вход',kind:0}];for(const camera of cameras){const tile=document.createElement('div');tile.className='camera'+(camera.tracking?' tracking':'');tile.innerHTML=scene(camera.kind,camera.tracking)+`<span class="camera-label">${camera.name}${camera.motion?'<i class="motion" role="img" aria-label="Движение"></i>':''}</span>`+(camera.object?`<span class="objects" role="img" aria-label="${camera.object==='person'?'Человек':'Автомобиль'}">${icon(camera.object)}</span>`:'');document.querySelector('#cameras').append(tile)}for(const button of document.querySelectorAll('[data-nav]')){button.innerHTML=icon(button.dataset.nav)+button.dataset.nav;button.onclick=()=>button.dataset.nav==='Live'?closeRecording():announce('Сейчас согласуем Live и просмотр записи · другие вкладки не подключены')}
+Object.assign(icons, {
+  back:'<path d="m14 5-7 7 7 7M7 12h14"/>',
+  play:'<path d="m9 5 11 7-11 7Z"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
+  rewind:'<path d="m11 6-8 6 8 6V6Zm10 0-8 6 8 6V6Z"/>',
+  forward:'<path d="m3 6 8 6-8 6V6Zm10 0 8 6-8 6V6Z"/>'
+});
+
+function createDemoPlayback(onChange, scheduler = {setInterval, clearInterval}) {
+  let state = {position:8, duration:52, playing:false, mode:'ready'};
+  let timer = null;
+  const snapshot = () => ({...state});
+  const emit = () => onChange(snapshot());
+  const playable = () => state.mode === 'ready' || state.mode === 'ongoing';
+  function stopTimer() {
+    if (timer !== null) scheduler.clearInterval(timer);
+    timer = null;
+  }
+  function pause() {
+    stopTimer();
+    state.playing = false;
+    emit();
+  }
+  function setMode(mode) {
+    stopTimer();
+    state.mode = mode;
+    state.playing = false;
+    state.duration = mode === 'ongoing' ? 38 : 52;
+    state.position = Math.min(state.position, state.duration);
+    emit();
+  }
+  function open(mode) {
+    state.position = 8;
+    setMode(mode);
+  }
+  function seek(position) {
+    if (!playable()) return;
+    state.position = Math.max(0, Math.min(state.duration, Number.isFinite(position) ? position : 0));
+    if (state.position === state.duration) {
+      stopTimer();
+      state.playing = false;
+    }
+    emit();
+  }
+  function toggle() {
+    if (!playable()) return;
+    if (state.playing) { pause(); return; }
+    if (state.position === state.duration) state.position = 0;
+    state.playing = true;
+    timer = scheduler.setInterval(() => {
+      state.position = Math.min(state.duration, state.position + 1);
+      if (state.position === state.duration) {
+        stopTimer();
+        state.playing = false;
+      }
+      emit();
+    }, 1000);
+    emit();
+  }
+  function extend() {
+    if (state.mode !== 'ongoing') return;
+    state.duration += 15;
+    emit();
+  }
+  return {snapshot, open, setMode, seek, toggle, extend, pause, close:pause};
+}
+
+function formatElapsed(seconds) {
+  const value = Math.max(0, Math.floor(seconds));
+  return String(Math.floor(value / 60)).padStart(2, '0') + ':' + String(value % 60).padStart(2, '0');
+}
+function formatClock(seconds) {
+  const value = ((Math.floor(seconds) % 86400) + 86400) % 86400;
+  return String(Math.floor(value / 3600)).padStart(2, '0') + ':' + formatElapsed(value % 3600);
+}
+function recordingStart(item) {
+  return 14 * 3600 + 32 * 60 - (Number.parseInt(item.age, 10) || 0) * 60 - 4;
+}
+
+const screenPicker = document.querySelector('#screen');
+const modePicker = document.querySelector('#recording-mode');
+const liveScroll = document.querySelector('#live-scroll');
+const recordingScreen = document.querySelector('#recording-screen');
+const toolbar = document.querySelector('#app-toolbar');
+const notes = document.querySelector('#design-notes');
+const liveNotes = notes.innerHTML;
+let activeItem = null;
+let liveBookmark = {top:0, left:0};
+let returnFocus = null;
+const playback = createDemoPlayback(syncRecording);
+
+function render() {
+  const oldStrip = review.querySelector('.strip');
+  const left = activeItem ? liveBookmark.left : oldStrip ? oldStrip.scrollLeft : 0;
+  const top = activeItem ? liveBookmark.top : liveScroll.scrollTop;
+  renderReviewCards();
+  const newStrip = review.querySelector('.strip');
+  if (newStrip) newStrip.scrollLeft = left;
+  liveScroll.scrollTop = top;
+  if (activeItem) syncRecording(playback.snapshot());
+}
+
+function openDetail(item, mode = item.ongoing ? 'ongoing' : 'ready') {
+  if (!activeItem) {
+    liveBookmark = {top:liveScroll.scrollTop, left:review.querySelector('.strip')?.scrollLeft || 0};
+    returnFocus = document.activeElement;
+  }
+  activeItem = item;
+  current = item.id;
+  liveScroll.hidden = true;
+  recordingScreen.hidden = false;
+  recordingScreen.scrollTop = 0;
+  screenPicker.value = 'recording';
+  modePicker.value = mode;
+  toolbar.className = 'toolbar recording-toolbar';
+  toolbar.innerHTML = '<button class="back-button" id="back-to-live" aria-label="Назад к Live">' + icon('back') + '</button><div class="route-title"><strong id="recording-camera"></strong><small>Запись события</small></div>';
+  document.querySelector('#recording-camera').textContent = item.name;
+  document.querySelector('#back-to-live').onclick = closeRecording;
+  document.querySelector('#recording-image').innerHTML = scene(item.kind, item.object === 'Человек').replace('xMidYMid slice', 'xMidYMid meet');
+  document.querySelector('#event-object-icon').innerHTML = icon(item.object === 'Автомобиль' ? 'car' : 'person');
+  document.querySelector('#event-object').textContent = item.object;
+  notes.innerHTML = '<h2>Момент, а не весь архив</h2><p>Кадр, пауза и перемотка на первом плане. Под ними — время и объект. Без настроек, экспорта и сложной архивной шкалы.</p><h2>Два способа перемотки</h2><p>±10 секунд для быстрого поиска или точная позиция на ползунке. Конец фрагмента не переключает запись в Live.</p><div class="note-rule"><h2>Попробуйте состояния</h2><p>Переключатель «Запись» сверху показывает загрузку, ошибку, отсутствие записи и продолжающееся событие.</p><p>Back возвращает к карусели. Кнопка отметки меняет только эту демонстрацию; API не вызывается.</p></div>';
+  playback.open(mode);
+  document.querySelector('#back-to-live').focus({preventScroll:true});
+}
+
+function closeRecording() {
+  if (!activeItem) return;
+  playback.close();
+  activeItem = null;
+  current = null;
+  recordingScreen.hidden = true;
+  liveScroll.hidden = false;
+  toolbar.className = 'toolbar';
+  toolbar.textContent = 'Live';
+  screenPicker.value = 'live';
+  notes.innerHTML = liveNotes;
+  liveScroll.scrollTop = liveBookmark.top;
+  const strip = review.querySelector('.strip');
+  if (strip) strip.scrollLeft = liveBookmark.left;
+  const target = returnFocus?.isConnected ? returnFocus : review.querySelector('.open-review') || screenPicker;
+  target.focus({preventScroll:true});
+}
+
+function syncRecording(value) {
+  if (!activeItem) return;
+  const available = value.mode === 'ready' || value.mode === 'ongoing';
+  const seek = document.querySelector('#seek');
+  seek.max = value.duration;
+  seek.value = value.position;
+  seek.disabled = !available;
+  seek.setAttribute('aria-valuetext', formatElapsed(value.position) + ' из ' + formatElapsed(value.duration));
+  document.querySelector('#position').textContent = available ? formatElapsed(value.position) : '—:—';
+  document.querySelector('#duration').textContent = available ? formatElapsed(value.duration) : '—:—';
+  const play = document.querySelector('#play-pause');
+  play.disabled = !available;
+  const ended = value.position === value.duration;
+  play.setAttribute('aria-label', value.playing ? 'Пауза' : ended ? 'Воспроизвести сначала' : 'Воспроизвести');
+  play.innerHTML = icon(value.playing ? 'pause' : 'play');
+  document.querySelector('#seek-back').disabled = !available;
+  document.querySelector('#seek-forward').disabled = !available;
+  document.querySelector('#recording-clock').textContent = formatClock(recordingStart(activeItem) + value.position);
+  document.querySelector('#recording-clock').hidden = !available;
+  document.querySelector('#event-date').textContent = 'Сегодня, ' + formatClock(recordingStart(activeItem) + 4) + ' · ' + activeItem.age;
+  document.querySelector('#playback-caption').textContent = !available ? value.mode === 'buffering' ? 'Загрузка' : 'Запись недоступна' : value.playing ? 'Воспроизведение' : ended ? value.mode === 'ongoing' ? 'Конец доступной записи' : 'Фрагмент завершён' : 'На паузе';
+  document.querySelector('#ongoing-note').hidden = value.mode !== 'ongoing';
+  const markButton = document.querySelector('#recording-mark');
+  const reviewed = !reviews.some(item => item.id === current);
+  markButton.disabled = reviewed;
+  markButton.innerHTML = icon('check') + (reviewed ? 'Просмотрено · в макете' : 'Отметить просмотренным');
+  const overlay = document.querySelector('#recording-overlay');
+  overlay.hidden = available;
+  if (overlay.dataset.mode !== value.mode) {
+    overlay.dataset.mode = value.mode;
+    if (value.mode === 'buffering') {
+      overlay.innerHTML = '<span class="spinner" aria-hidden="true"></span><strong>Загрузка записи…</strong><p>Демонстрационное состояние</p>';
+    } else if (!available) {
+      const missing = value.mode === 'missing';
+      overlay.innerHTML = '<strong>' + (missing ? 'Запись пока недоступна' : 'Не удалось загрузить запись') + '</strong><p>' + (missing ? 'Фрагмент мог ещё не сохраниться.' : 'Проверьте соединение и повторите.') + '</p><button id="retry-recording">Повторить</button>';
+      document.querySelector('#retry-recording').onclick = () => {
+        modePicker.value = 'ready';
+        playback.setMode('ready');
+        announce('Запись доступна · это демонстрация Retry');
+      };
+    } else {
+      overlay.replaceChildren();
+    }
+  }
+}
+
+document.querySelector('#seek-back').innerHTML = icon('rewind') + '<span>10 с</span>';
+document.querySelector('#seek-forward').innerHTML = icon('forward') + '<span>10 с</span>';
+document.querySelector('#seek-back').onclick = () => playback.seek(playback.snapshot().position - 10);
+document.querySelector('#seek-forward').onclick = () => playback.seek(playback.snapshot().position + 10);
+document.querySelector('#play-pause').onclick = () => playback.toggle();
+document.querySelector('#seek').oninput = event => playback.seek(Number(event.target.value));
+document.querySelector('#recording-mark').onclick = () => mark(current);
+document.querySelector('#refresh-recording').onclick = () => {
+  playback.extend();
+  announce('В макете добавлено ещё 15 секунд записи');
+};
+screenPicker.onchange = () => screenPicker.value === 'live' ? closeRecording() : openDetail(original[1]);
+modePicker.onchange = () => activeItem ? playback.setMode(modePicker.value) : openDetail(original[1], modePicker.value);
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && activeItem) closeRecording(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) playback.pause(); });
+window.addEventListener('pagehide', () => playback.close());
+render();
+openDetail(original[1]);
+</script>
+</body>
+</html>
