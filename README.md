@@ -37,4 +37,4 @@ Frigate is free, open-source video surveillance software. It records cameras and
 ## Contributing
 
 - How to contribute: [CONTRIBUTING.md](CONTRIBUTING.md).
-- Architecture, protocols, and device checks: [docs/INDEX.md](docs/INDEX.md) (in Russian: [docs/INDEX.ru.md](docs/INDEX.ru.md)).
+- Feature design, protocols, and device checks: [docs/](docs/).

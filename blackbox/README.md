@@ -39,6 +39,11 @@ A held video decoder is visible from outside the app process in `dumpsys media.r
 
 The mock serves video only when `BB_MEDIA_PYTHON` is set, and a frame is checked by screenshots. Real cameras, H.265, multi-hour playback and the archive speed menu stay with device acceptance in §4 of the strategy. Backgrounding the app (HOME and return) is checked; screen off/on is not.
 
-## Status
+## Test rules
 
-See "BlackBox-тесты (UiAutomator)" in `CLAUDE.md`: 33 tests on SM-S901E on 2026-11-03; a frame is checked on a synthetic stream. Rotation is performed by the framework itself, which then restores auto-rotate (`unfreezeRotation`).
+- A rotation test must request an orientation the activity does not have yet: requesting the current one does not recreate the activity, and the test passes while proving nothing. `ActivityInfo.SCREEN_ORIENTATION_*` and `Configuration.ORIENTATION_*` are different constants; do not compare them directly. The framework performs the rotation (`UiDevice.setOrientationLeft/Natural`) and freezes auto-rotate, so the test calls `unfreezeRotation()` in `@After`.
+- The video tests use the H.264 1280×720 clip from the mock (`mock-server/make_media.py`); without `BB_MEDIA_PYTHON` they are skipped. The 1280 px width is also needed for zoom: the limit is computed from the source width, and at 320 px there is no zoom.
+- The Compose accessibility state (`stateDescription`) is not visible through UiAutomation; such state is read from pixel colours.
+- Long tests hold the screen on themselves (`keepScreenOn()`): after ~30 s without touches it turns off and playback stops.
+- `adb shell uiautomator dump` between two taps swallows the next tap and gives a false "the button does not react" diagnosis. Use `screencap` without a dump for consecutive taps.
+- Text goes into fields directly (`UiObject2.text`), without the keyboard: the Samsung keyboard covered the form.

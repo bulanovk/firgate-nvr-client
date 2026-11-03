@@ -4,7 +4,7 @@
 
 Thank you for your interest in the project. Please read this document before opening a pull request.
 
-Architecture, protocols, and device checks are described in [docs/INDEX.md](docs/INDEX.md). The file [CLAUDE.md](CLAUDE.md) is the instruction file for the AI agent that works with the code in this repository.
+Feature design, protocols, and device checks are described in [docs/](docs/). The file [CLAUDE.md](CLAUDE.md) is the instruction file for the AI agent that works with the code in this repository.
 
 ## Before you start
 
@@ -33,7 +33,7 @@ Before you write code for a new feature:
 
 - **Does it work?** Tested locally, tests pass, no regressions.
 - **Is it maintainable?** Clear code, reasonable complexity, good separation of responsibilities.
-- **Does it fit?** Consistent with the architecture and project principles described in `docs/`.
+- **Does it fit?** Consistent with the feature design and project principles described in `docs/`.
 - **Is the scope right?** Solves the stated problem without unnecessary additions.
 
 ### After submitting
