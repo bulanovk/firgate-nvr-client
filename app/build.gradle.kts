@@ -26,6 +26,14 @@ android {
     // BlackBox-сборка: копия debug с отдельным application id. Данные (профиль сервера,
     // сессия, credentials) отделены от основного приложения, поэтому clearState безопасен.
     buildTypes {
+        // Test build for publishing: R8 shrinks dex, which is almost the whole APK. It is signed with
+        // the debug key on purpose: only that key lets it replace the installed app via `adb install -r`.
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+        }
         create("blackbox") {
             initWith(getByName("debug"))
             applicationIdSuffix = ".blackbox"

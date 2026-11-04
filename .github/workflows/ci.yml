@@ -35,8 +35,8 @@ jobs:
 
       # Instrumentation and BlackBox tests need a device and do not run here,
       # but they must still compile.
-      - name: Compile instrumentation and BlackBox tests
-        run: ./gradlew assembleDebugAndroidTest assembleBlackbox
+      - name: Compile instrumentation, BlackBox and release builds
+        run: ./gradlew assembleDebugAndroidTest assembleBlackbox assembleRelease
 
       - name: Upload test reports
         if: failure()

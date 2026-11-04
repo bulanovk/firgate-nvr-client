@@ -19,7 +19,7 @@
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 PATH="/usr/lib/jvm/java-21-openjdk-amd64/bin:$PATH"   # Java 21 обязательна
 ./gradlew testDebugUnitTest assembleDebug          # unit suite + APK: app/build/outputs/apk/debug/app-debug.apk
 ./gradlew testDebugUnitTest --tests com.frigate.android.feature.live.MsePlaybackHtmlTest   # один класс
-./gradlew assembleDebugAndroidTest assembleBlackbox   # instrumentation и BlackBox должны компилироваться
+./gradlew assembleDebugAndroidTest assembleBlackbox assembleRelease   # instrumentation, BlackBox и release (R8) должны собираться
 adb -s <serial> install -r app/build/outputs/apk/debug/app-debug.apk   # единственный способ ставить на устройство
 ```
 
@@ -38,5 +38,5 @@ adb -s <serial> install -r app/build/outputs/apk/debug/app-debug.apk   # еди�
 
 ## CI
 
-- Перед пушем прогоняй `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest assembleBlackbox` (то же, что `.github/workflows/ci.yml`).
+- Перед пушем прогоняй `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest assembleBlackbox assembleRelease` (то же, что `.github/workflows/ci.yml`).
 - `versionCode` не увеличивай: иначе `adb install -r` на устройстве откажет.
