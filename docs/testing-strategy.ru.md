@@ -79,7 +79,7 @@ Compose-компонентные тесты лежат в `app/src/androidTest` 
 
 Навигация Live (камера → Back → сетка, fullscreen и вкладки) и сохранность activity socket при смене вкладок проверяются снаружи процесса в UiAutomator (`LiveCameraTest`, `LiveFeedTest`): так проверяются настоящий `ConnectedApp`, его транспорт и системные границы, а не презентационное состояние.
 
-Для локального HTTP test server debug-only network config разрешает cleartext только localhost/127.0.0.1; release и TLS verification не меняются.
+Приложение разрешает cleartext во всех сборках: домашний адрес Frigate обычно обычный `http://` в локальной сети. Основной адрес обязан быть https (для локальных test server допустим loopback), session cookie и credentials уходят только на origin активного адреса, TLS verification не меняется.
 
 Дополнительные acceptance-сценарии: portrait/wide, две колонки от 600 dp, длинное имя, overflow объектов, увеличенный шрифт, clipping snapshot/TextureView и overlays. Цвет не должен быть единственным признаком состояния; Retry touch target минимум 48 dp.
 
@@ -97,6 +97,7 @@ Compose-компонентные тесты лежат в `app/src/androidTest` 
 - Media failure → still + Retry → свежая session/output identity.
 - Disabled/offline/recovery по достоверным данным.
 - Events/Settings: release media и отмена polling, но shared activity subscription сохраняется на уровне ConnectedApp. Background/screen off/on/pause/resume: ON_STOP закрывает оба транспорта, ON_START создаёт свежую generation.
+- Домашний адрес: в домашней Wi-Fi приложение работает по домашнему адресу, в мобильной сети и любой другой Wi-Fi по основному; в Настройках (режим просмотра; Edit/Save/Cancel; смена основного адреса требует войти заново) видно, какой адрес активен. Переключение сохраняет сессию (без нового входа), пересоздаёт activity socket и players, cookie уходит только на активный origin. Недоступный домашний адрес откатывается на основной до смены сети. Отзыв разрешения на геолокацию возвращает основной адрес. Переключение проверять во время Live, History и picture-in-picture.
 - DIM при STARTED проверяется отдельно: это не STOP, и потеря событий не считается устранённой layout-изменением.
 
 Не подменять один playback path другим ради green.

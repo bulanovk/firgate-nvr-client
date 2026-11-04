@@ -8,7 +8,7 @@
 
 | Путь | Назначение |
 |---|---|
-| `../blackbox-tests/` | тесты UiAutomator: вход, продление сессии, карусель → History, Live (камера, fullscreen, поворот, щипок, активность, снимки), видео и звук, Events (список, превью карточки, сессия, Motion) |
+| `../blackbox-tests/` | тесты UiAutomator: вход, продление сессии, карусель → History, Live (камера, fullscreen, поворот, щипок, активность, снимки), видео и звук, Events (список, превью карточки, сессия, Motion), домашняя сеть (адрес по Wi-Fi: переключение, откат, неизвестная сеть, нет разрешения) |
 | `mock-server/make_media.py` | генератор тестового H.264 (нужен PyAV, ключ `BB_MEDIA_PYTHON`) |
 | `mock-server/server.py` | управляемый mock Frigate (Python, только стандартная библиотека) |
 | `lib/config.sh` | загрузка локального файла настроек |
@@ -27,7 +27,7 @@
 
 ## Управление mock
 
-Mock управляется через `/__control/*` и только по loopback: `review/<epoch>` (фиксированное начало обзора), `reviewed/on|off`, `timezone/<имя>`, `cameras/<n>`, `preview/<video|none>`, отказы `fail/<viewed|preview-media|thumb>/<код>/<раз>`, удержание ответов `hold/<preview-media|motion>/on|off`, `activity` и `ws/send` (push по WebSocket), `audio/<режим>`, `expire`, `reset`, журнал запросов `log` (без query, без `/__control/*`, до 500 записей). Тесты считают запросы по этому журналу.
+Mock управляется через `/__control/*` и только по loopback: `review/<epoch>` (фиксированное начало обзора), `reviewed/on|off`, `timezone/<имя>`, `cameras/<n>`, `preview/<video|none>`, отказы `fail/<viewed|preview-media|thumb>/<код>/<раз>`, удержание ответов `hold/<preview-media|motion>/on|off`, `activity` и `ws/send` (push по WebSocket), `audio/<режим>`, `expire`, `reset`, журнал запросов `log` и заголовки `Host` запросов `hosts`/`reset-hosts` (без query, без `/__control/*`, до 500 записей). Тесты считают запросы по этому журналу.
 
 Занятый декодер видео виден снаружи процесса приложения в `dumpsys media.resource_manager` (`Current Codec Usage: { VideoDec[ HW: n ] }`); строка есть, только пока декодер занят.
 
@@ -36,7 +36,7 @@ Mock управляется через `/__control/*` и только по loopb
 - Сборка `blackbox` ставится как отдельное приложение с суффиксом `.blackbox`: профиль, сессия и credentials основного приложения не затрагиваются, `clearState` безопасен. Раннер отказывается работать с id без этого суффикса.
 - Установка только через `adb install -r`.
 - Тестовые логин и пароль тест читает у mock по loopback, а не из аргументов командной строки.
-- Cleartext в debug разрешён только для loopback-имён; для mock адрес доходит до устройства через `adb reverse`. TLS не отключается.
+- Основной адрес принимается по http только для loopback-имён (localhost, 127.0.0.1); для mock адрес доходит до устройства через `adb reverse`. TLS не отключается.
 
 ## Границы
 

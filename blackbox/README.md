@@ -6,7 +6,7 @@ External UiAutomator tests (module `:blackbox-tests`): the installed APK, the re
 
 | Path | Purpose |
 |---|---|
-| `../blackbox-tests/` | UiAutomator tests: login, session renewal, carousel → History, Live (camera, fullscreen, rotation, pinch, activity, stills), video and sound, Events (list, card preview, session, Motion) |
+| `../blackbox-tests/` | UiAutomator tests: login, session renewal, carousel → History, Live (camera, fullscreen, rotation, pinch, activity, stills), video and sound, Events (list, card preview, session, Motion), home network (address by Wi-Fi: switch, fallback, unknown network, no permission) |
 | `mock-server/make_media.py` | test H.264 generator (needs PyAV, key `BB_MEDIA_PYTHON`) |
 | `mock-server/server.py` | controllable mock Frigate (Python, standard library only) |
 | `lib/config.sh` | local settings loader |
@@ -25,7 +25,7 @@ There are no network defaults: host, port, device serial and server URL come onl
 
 ## Mock control
 
-The mock is driven through `/__control/*`, always over loopback: `review/<epoch>` (fixed start of the review), `reviewed/on|off`, `timezone/<name>`, `cameras/<n>`, `preview/<video|none>`, injected failures `fail/<viewed|preview-media|thumb>/<code>/<times>`, held responses `hold/<preview-media|motion>/on|off`, `activity` and `ws/send` (WebSocket pushes), `audio/<mode>`, `expire`, `reset`, and the request log `log` (without query strings, without `/__control/*`, up to 500 entries). Tests count requests from that log.
+The mock is driven through `/__control/*`, always over loopback: `review/<epoch>` (fixed start of the review), `reviewed/on|off`, `timezone/<name>`, `cameras/<n>`, `preview/<video|none>`, injected failures `fail/<viewed|preview-media|thumb>/<code>/<times>`, held responses `hold/<preview-media|motion>/on|off`, `activity` and `ws/send` (WebSocket pushes), `audio/<mode>`, `expire`, `reset`, the request log `log` and the `Host` headers of requests `hosts`/`reset-hosts` (without query strings, without `/__control/*`, up to 500 entries). Tests count requests from that log.
 
 A held video decoder is visible from outside the app process in `dumpsys media.resource_manager` (`Current Codec Usage: { VideoDec[ HW: n ] }`); it is present only while a decoder is held.
 

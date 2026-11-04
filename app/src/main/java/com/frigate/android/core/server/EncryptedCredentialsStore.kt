@@ -35,7 +35,7 @@ internal class EncryptedCredentialsStore(
         preferences.remove(keyFor(profile))
     }
 
-    private fun keyFor(profile: ServerProfile): String = CREDENTIALS_PREFIX + profile.baseUrl.sha256()
+    private fun keyFor(profile: ServerProfile): String = CREDENTIALS_PREFIX + profile.primaryUrl.sha256()
 
     private companion object {
         const val CREDENTIALS_PREFIX = "encrypted_credentials_"

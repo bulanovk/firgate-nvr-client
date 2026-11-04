@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The home address of Frigate is usually a plain http address in the local network, and the
+    platform blocks http by default. The session cookie and the credentials are sent only to the
+    origin of the active address of the server.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

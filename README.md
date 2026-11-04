@@ -13,6 +13,7 @@ This is an independent client. It is not part of Frigate and is not developed by
 - **Archive** — camera recordings with a timeline and playback speeds from 0.5× to 16×.
 - **Events** — a list of events with filters by object and zone.
 - **Sign in once** — the app remembers the server and renews the session without asking for your password again.
+- **Home and away addresses** — set a direct local address and your home Wi-Fi networks in Settings (view mode; Edit opens one form for the main address, the home address and the networks). Changing the main address signs you out. At home the app uses the local address, everywhere else the main one. Android shows the Wi-Fi name only with the location permission; without it the main address is used.
 
 ## Requirements
 

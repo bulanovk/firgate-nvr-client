@@ -171,4 +171,4 @@ MJPEG — не движок: в PWA это переключатель «Force lo
 - Переключение потока на большее разрешение при зуме (`LiveStreamSelect` в PWA).
 - Улучшение чёткости (AI/super-resolution).
 - Двусторонняя связь (микрофон), PTZ, режим низкой полосы (JSMpeg), воспроизведение в фоне.
-- Wi-Fi routing, continuous playback.
+- Continuous playback.

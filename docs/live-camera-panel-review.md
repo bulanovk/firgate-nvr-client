@@ -171,4 +171,4 @@ In the mockup and in the app the list is the same: MSE is available, WebRTC is d
 - Switching the stream to a higher resolution on zoom (`LiveStreamSelect` in the PWA).
 - Sharpness enhancement (AI/super-resolution).
 - Two-way audio (microphone), PTZ, low-bandwidth mode (JSMpeg), background playback.
-- Wi-Fi routing, continuous playback.
+- Continuous playback.

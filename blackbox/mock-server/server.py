@@ -98,6 +98,7 @@ lock = threading.Lock()
 sessions = set()
 reviewed = set()
 request_log = []
+host_log = []
 
 # Сценарий, который тест меняет через /__control/*; reset возвращает значения по умолчанию.
 camera_ids = ["yard"]
@@ -193,7 +194,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, {"ok": True})
         if name == "reset":
             with lock:
-                sessions.clear(); reviewed.clear(); request_log.clear()
+                sessions.clear(); reviewed.clear(); request_log.clear(); host_log.clear()
                 audio_mode = "none"; camera_ids = ["yard"]; ui_timezone = None; review_start = None
                 preview_mode = "video"; activity_payload = None; ws_connections = 0
                 failures.clear()
@@ -282,6 +283,14 @@ class Handler(BaseHTTPRequestHandler):
         if name == "log":
             with lock:
                 return self.send(200, list(request_log))
+        if name == "hosts":
+            # Заголовки Host запросов к API: по ним видно, на какой адрес приложение реально ходило.
+            with lock:
+                return self.send(200, sorted(set(host_log)))
+        if name == "reset-hosts":
+            with lock:
+                host_log.clear()
+            return self.send(200, {"ok": True})
         if name == "credentials":
             # Тестовые логин/пароль mock: тест читает их по loopback, а не из argv instrumentation.
             return self.send(200, {"user": USER, "password": PASSWORD})
@@ -319,6 +328,8 @@ class Handler(BaseHTTPRequestHandler):
             with lock:
                 request_log.append(f"{method} {path}")
                 del request_log[:-500]
+                host_log.append(self.headers.get("Host", ""))
+                del host_log[:-500]
 
         if path.startswith("/__control/"):
             return self.control(method, path)

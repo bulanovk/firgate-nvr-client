@@ -79,7 +79,7 @@ These tests receive presentation state, so they **do not prove** that Media3 act
 
 Live navigation (camera → Back → grid, fullscreen and tabs) and the survival of the activity socket across tab switches are checked from outside the process in UiAutomator (`LiveCameraTest`, `LiveFeedTest`): this exercises the real `ConnectedApp`, its transport and system boundaries rather than presentation state.
 
-For a local HTTP test server, a debug-only network config allows cleartext only for localhost/127.0.0.1; the release build and TLS verification do not change.
+The app allows cleartext traffic in every build, because the home address of Frigate is usually a plain `http://` address in the local network. The main address must use https (loopback is accepted for local test servers), the session cookie and credentials go only to the origin of the active address, and TLS verification does not change.
 
 Additional acceptance scenarios: portrait/wide, two columns from 600 dp, a long name, object overflow, enlarged font, clipping of the snapshot/TextureView and overlays. Colour must not be the only indicator of state; the Retry touch target is at least 48 dp.
 
@@ -98,6 +98,7 @@ Matrix:
 - Disabled/offline/recovery based on reliable data.
 - Events/Settings: media is released and polling cancelled, but the shared activity subscription is kept at the ConnectedApp level. Background/screen off/on/pause/resume: ON_STOP closes both transports, ON_START creates a fresh generation.
 - DIM while STARTED is checked separately: it is not a STOP, and loss of events is not considered fixed by a layout change.
+- Home address: on a home Wi-Fi the app uses the home address, on mobile data and on any other Wi-Fi the main one; Settings show which one is active (view mode; Edit/Save/Cancel; a changed main address asks to sign in again). The switch keeps the session (no new login), recreates the activity socket and the players, and sends the cookie only to the active origin. A dead home address falls back to the main one until the network changes. Revoking the location permission returns to the main address. Check the switch during Live, History and picture-in-picture.
 
 Do not swap one playback path for another just to get green.
 
