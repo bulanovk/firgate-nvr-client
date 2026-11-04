@@ -55,7 +55,7 @@ APK появится в `app/build/outputs/apk/debug/app-debug.apk`.
 
 ### Непрерывная интеграция
 
-GitHub Actions (`.github/workflows/ci.yml`) запускается на каждый push в `main`, в ветки `ci/*` и на теги `v*`, и на каждый pull request. Он прогоняет unit-тесты, собирает debug APK и проверяет, что instrumentation- и BlackBox-тесты компилируются. Перед просьбой о ревью убедитесь, что ваш pull request зелёный. Тесты, которым нужно устройство, в CI не запускаются. После зелёного push в `main` workflow `Publish test APK` прикладывает тестовый APK с debug-подписью к своему запуску как артефакт (хранится 30 дней; релиз и тег не создаются); он нужен только для проверки, не для production.
+GitHub Actions (`.github/workflows/ci.yml`) запускается на каждый push в `main`, в ветки `ci/*` и на теги `v*`, и на каждый pull request. Он прогоняет unit-тесты, собирает debug APK и проверяет, что instrumentation- и BlackBox-тесты компилируются. Перед просьбой о ревью убедитесь, что ваш pull request зелёный. Тесты, которым нужно устройство, в CI не запускаются. После зелёного push в `main` workflow `Publish test APK` публикует тестовый APK с debug-подписью на GitHub Pages (постоянная ссылка в README; релиз и тег не создаются); он нужен только для проверки, не для production.
 
 ## Стандарты кода
 

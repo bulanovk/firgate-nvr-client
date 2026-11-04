@@ -22,7 +22,9 @@ This is an independent client. It is not part of Frigate and is not developed by
 
 ## Installation
 
-There is no store build yet. To build from source:
+There is no store build yet. You can download a test build of the latest `main`: [frigate-android-test.apk](https://bulanovk.github.io/firgate-nvr-client/frigate-android-test.apk) ([build page](https://bulanovk.github.io/firgate-nvr-client/)). It is signed with a debug key and is meant for testing only.
+
+To build from source:
 
 1. Install JDK 21 and the Android SDK.
 2. From the project root, run `./gradlew assembleDebug`.
