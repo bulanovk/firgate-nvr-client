@@ -55,7 +55,7 @@ The APK is produced at `app/build/outputs/apk/debug/app-debug.apk`.
 
 ### Continuous integration
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main`, to branches matching `ci/*` and to `v*` tags, and on every pull request. It runs the unit tests, builds the debug APK, and checks that the instrumentation and BlackBox tests compile. Please make sure your pull request is green before asking for a review. Tests that need a device are not run in CI. After a green push to `main`, CI also publishes a debug-signed test APK as a GitHub pre-release (`test-<run number>`); it is for testing only, not for production.
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main`, to branches matching `ci/*` and to `v*` tags, and on every pull request. It runs the unit tests, builds the debug APK, and checks that the instrumentation and BlackBox tests compile. Please make sure your pull request is green before asking for a review. Tests that need a device are not run in CI. After a green push to `main`, the `Publish test APK` workflow attaches a debug-signed test APK to its run as an artifact (kept for 30 days; no release or tag is created); it is for testing only, not for production.
 
 ## Coding standards
 

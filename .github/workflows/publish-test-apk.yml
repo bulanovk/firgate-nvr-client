@@ -1,6 +1,6 @@
 name: Publish test APK
 
-# Publishes the debug APK of every green push to main as a GitHub pre-release.
+# Publishes the release (R8-shrunk, debug-signed) APK of every green push to main as a workflow artifact (no release, no tag).
 #
 # This is a separate workflow (not a job of ci.yml) so that pull requests do not show a skipped
 # "publish" check. It runs after the CI workflow finished, so the tests are not repeated here.
@@ -36,8 +36,6 @@ jobs:
       && github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: write
     env:
       # The commit CI has tested; GITHUB_SHA here is the current head of main, which may be newer.
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -67,24 +65,17 @@ jobs:
           chmod 600 "$HOME/.android/debug.keystore"
 
       - name: Build the test APK
-        run: ./gradlew assembleDebug "-PappVersionSuffix=-test.${CI_RUN_NUMBER}+${HEAD_SHA::7}"
+        run: ./gradlew assembleRelease "-PappVersionSuffix=-test.${CI_RUN_NUMBER}+${HEAD_SHA::7}"
 
       - name: Show the signing certificate
         run: |
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
-          "$apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | grep 'certificate SHA-256'
+          "$apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk | grep 'certificate SHA-256'
 
-      - name: Publish the pre-release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          tag="test-${CI_RUN_NUMBER}"
-          apk="frigate-android-${tag}-${HEAD_SHA::7}.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "$apk"
-          if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" "$apk" --clobber
-          else
-            gh release create "$tag" "$apk" --prerelease --target "$HEAD_SHA" \
-              --title "Test build ${CI_RUN_NUMBER}" \
-              --notes "Test build of main at ${HEAD_SHA}. Debug-signed, not for production."
-          fi
+      - name: Upload the test APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: frigate-android-test-${{ env.CI_RUN_NUMBER }}-${{ github.event.workflow_run.head_sha }}
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
