@@ -22,7 +22,9 @@
 
 ## Установка
 
-Готовой сборки в магазине приложений пока нет. Собрать из исходников можно так:
+Готовой сборки в магазине приложений пока нет. Тестовую сборку последнего `main` можно скачать: [frigate-android-test.apk](https://bulanovk.github.io/firgate-nvr-client/frigate-android-test.apk) ([страница сборки](https://bulanovk.github.io/firgate-nvr-client/)). Она подписана debug-ключом и предназначена только для проверки.
+
+Собрать из исходников можно так:
 
 1. Установите JDK 21 и Android SDK.
 2. В корне проекта выполните `./gradlew assembleDebug`.

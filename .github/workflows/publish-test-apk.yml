@@ -1,6 +1,6 @@
 name: Publish test APK
 
-# Publishes the release (R8-shrunk, debug-signed) APK of every green push to main as a workflow artifact (no release, no tag).
+# Publishes the release (R8-shrunk, debug-signed) APK of every green push to main to GitHub Pages: a stable public link, no release and no tag.
 #
 # This is a separate workflow (not a job of ci.yml) so that pull requests do not show a skipped
 # "publish" check. It runs after the CI workflow finished, so the tests are not repeated here.
@@ -72,10 +72,36 @@ jobs:
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
           "$apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk | grep 'certificate SHA-256'
 
-      - name: Upload the test APK
-        uses: actions/upload-artifact@v7
+      - name: Prepare the download page
+        run: |
+          mkdir site
+          cp app/build/outputs/apk/release/app-release.apk site/frigate-android-test.apk
+          cat > site/index.html <<EOF
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Frigate Android test build</title></head>
+          <body>
+          <h1>Frigate Android test build</h1>
+          <p><a href="frigate-android-test.apk">Download frigate-android-test.apk</a></p>
+          <p>Build ${CI_RUN_NUMBER} of main, commit <a href="https://github.com/${{ github.repository }}/commit/${HEAD_SHA}">${HEAD_SHA::7}</a>. Debug-signed, for testing only, not for production.</p>
+          </body></html>
+          EOF
+
+      - uses: actions/upload-pages-artifact@v5
         with:
-          name: frigate-android-test-${{ env.CI_RUN_NUMBER }}-${{ github.event.workflow_run.head_sha }}
-          path: app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-          retention-days: 30
+          path: site
+
+  deploy:
+    name: Deploy the download page
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
