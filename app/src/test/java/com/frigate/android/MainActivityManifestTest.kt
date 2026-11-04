@@ -40,6 +40,25 @@ class MainActivityManifestTest {
         )
     }
 
+    @Test
+    fun manifestDeclaresWhatHomeNetworkDetectionNeeds() {
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(manifestFile())
+        val permissions = document.getElementsByTagName("uses-permission")
+        val declared = (0 until permissions.length).map { (permissions.item(it) as Element).getAttribute("android:name") }.toSet()
+        val required = setOf(
+            "android.permission.ACCESS_WIFI_STATE",
+            "android.permission.ACCESS_FINE_LOCATION",
+        )
+        assertTrue(declared.containsAll(required), "Missing permissions: ${required - declared}")
+
+        val application = document.getElementsByTagName("application").item(0) as Element
+        assertTrue(
+            application.getAttribute("android:networkSecurityConfig") == "@xml/network_security_config",
+            "The local http address of Frigate is blocked without a network security config",
+        )
+        assertTrue(File(manifestFile().parentFile, "res/xml/network_security_config.xml").isFile)
+    }
+
     private fun configChangesOfMainActivity(): Set<String> {
         val document = DocumentBuilderFactory.newInstance()
             .newDocumentBuilder()

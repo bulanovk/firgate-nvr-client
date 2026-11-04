@@ -49,7 +49,15 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import com.frigate.android.core.server.HomeNetwork
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +72,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import com.frigate.android.core.network.AndroidNetworkMonitor
+import com.frigate.android.core.network.Endpoint
+import com.frigate.android.feature.settings.ServerSettings
+import com.frigate.android.feature.settings.SettingsScreen
+import com.frigate.android.core.network.NetworkSnapshot
+import com.frigate.android.core.network.Route
 import com.frigate.android.core.server.AndroidEncryptedCredentialsStore
 import com.frigate.android.core.server.AndroidEncryptedSessionCookieStore
 import com.frigate.android.core.server.AndroidServerPreferences
@@ -86,6 +100,9 @@ import com.frigate.android.feature.history.HistoryRange
 import com.frigate.android.feature.history.HistoryScreen
 import com.frigate.android.feature.review.ReviewUiState
 import com.frigate.android.feature.review.rememberReviewSession
+import com.frigate.android.ui.PillAccent
+import com.frigate.android.ui.PillButton
+import com.frigate.android.ui.PillMuted
 import com.frigate.android.ui.theme.FrigateTheme
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -124,6 +141,26 @@ private fun FrigateApp() {
     val renewal = remember { SessionRenewal(credentialsStore) }
     val scope = rememberCoroutineScope()
     var server by remember { mutableStateOf(store.load()) }
+    // The address in use: the main one, or the home one while the phone is on a home Wi-Fi.
+    val networkMonitor = remember { AndroidNetworkMonitor(context) }
+    var snapshot by remember { mutableStateOf(NetworkSnapshot.Unknown) }
+    var networkKnown by remember { mutableStateOf(false) }
+    var route by remember { mutableStateOf(server?.let { Route(it) }) }
+    fun useServer(next: ServerProfile?) {
+        server = next
+        route = next?.let { route?.withProfile(it) ?: Route(it, snapshot) }
+    }
+    DisposableEffect(networkMonitor) {
+        val subscription = networkMonitor.start { next ->
+            snapshot = next
+            networkKnown = true
+            route = route?.withNetwork(next)
+        }
+        onDispose { subscription.close() }
+    }
+    // A server with a home address waits for the first report of the monitor, so the app does not
+    // connect to the main address and then switch half a second later.
+    val waitingForNetwork = server?.homeUrl != null && !networkKnown
     var connection by remember { mutableStateOf<ConnectionState>(ConnectionState.Loading) }
     var activeScreen by rememberSaveable { mutableStateOf(AppScreen.Live) }
     // One renewal at a time: several transports can report the expired session at once.
@@ -153,8 +190,8 @@ private fun FrigateApp() {
         }
     }
 
-    LaunchedEffect(server) {
-        connection = server?.let { profile ->
+    LaunchedEffect(route?.active, waitingForNetwork) {
+        connection = route?.active?.takeIf { !waitingForNetwork }?.let { profile ->
             val legacyCookie = store.loadSession(profile)
             val sessionCookie = sessionStore.load(profile) ?: legacyCookie
             if (legacyCookie != null && sessionCookie == legacyCookie) {
@@ -167,7 +204,12 @@ private fun FrigateApp() {
                         // Without a cookie the credentials of the user are the only way in.
                         val cookie = renewal.renew(profile) { credentials ->
                             signIn(profile, credentials)
-                        } ?: throw FrigateHttpException(401, "Login required")
+                        }
+                        if (cookie == null) {
+                            // Nobody has typed a password yet: the sign in screen opens without an error.
+                            if (route?.active == profile) connection = ConnectionState.LoginRequired(profile)
+                            return@launch
+                        }
                         loadConnectedState(profile, FrigateClient(profile, cookie))
                     } else {
                         try {
@@ -182,8 +224,15 @@ private fun FrigateApp() {
                         }
                     }
                     sessionStore.save(profile, connected.sessionCookie)
-                    connection = connected
+                    // The network may have changed while the server was answering.
+                    if (route?.active == profile) connection = connected
                 } catch (error: Throwable) {
+                    if (route?.active != profile) return@launch
+                    if (!isUnauthorized(error) && route?.endpoint == Endpoint.Home) {
+                        // The home address does not answer: the main one takes over until the network changes.
+                        route = route?.homeFailed()
+                        return@launch
+                    }
                     if (isUnauthorized(error)) {
                         sessionStore.clear(profile)
                         store.clearSession(profile)
@@ -201,7 +250,7 @@ private fun FrigateApp() {
         ConnectionState.Loading -> if (server == null) {
             SetupScreen { selectedServer ->
                 store.save(selectedServer)
-                server = selectedServer
+                useServer(selectedServer)
             }
         } else {
             LoadingScreen()
@@ -218,7 +267,8 @@ private fun FrigateApp() {
                         val credentials = FrigateCredentials(user, password)
                         repository.login(credentials.username, credentials.password)
                         val connected = loadConnectedState(state.profile, client)
-                        store.save(state.profile)
+                        // The stored profile is the server itself, not the address in use right now.
+                        store.save(server ?: state.profile)
                         credentialsStore.save(state.profile, credentials)
                         sessionStore.save(state.profile, connected.sessionCookie)
                         connection = connected
@@ -230,7 +280,7 @@ private fun FrigateApp() {
             onChangeServer = {
                 sessionStore.clear(state.profile)
                 store.clear()
-                server = null
+                useServer(null)
                 connection = ConnectionState.Loading
             },
         )
@@ -238,12 +288,30 @@ private fun FrigateApp() {
             state = state,
             activeScreen = activeScreen,
             onScreenChange = { activeScreen = it },
-            onDisconnect = {
-                sessionStore.clear(state.profile)
-                store.clear()
-                server = null
-                connection = ConnectionState.Loading
-            },
+            settings = ServerSettings(
+                server = server ?: state.profile,
+                endpoint = route?.endpoint ?: Endpoint.Primary,
+                snapshot = snapshot,
+                username = state.user.username,
+                role = state.user.role,
+                onSave = { saved, mainChanged ->
+                    if (mainChanged) {
+                        // The session and the credentials belong to the old main address.
+                        sessionStore.clear(state.profile)
+                        credentialsStore.clear(state.profile)
+                    }
+                    store.save(saved)
+                    useServer(saved)
+                    if (mainChanged) connection = ConnectionState.Loading
+                },
+                onPermissionChanged = networkMonitor::refresh,
+                onSignOut = {
+                    sessionStore.clear(state.profile)
+                    store.clear()
+                    useServer(null)
+                    connection = ConnectionState.Loading
+                },
+            ),
             onUnauthorized = expired@{
                 // The session of the server expired: the cookie is spent, but the credentials of
                 // the user are still in the encrypted store. The app signs in again by itself and
@@ -266,7 +334,7 @@ private fun FrigateApp() {
 @Composable
 private fun LoadingScreen() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = FrigateColors.accent)
+        CircularProgressIndicator(color = PillAccent)
     }
 }
 
@@ -281,16 +349,16 @@ private fun LoginScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var message by rememberSaveable { mutableStateOf(initialMessage) }
 
-    Surface(Modifier.fillMaxSize(), color = FrigateColors.canvas) {
+    Surface(Modifier.fillMaxSize(), color = FrigatePwaColors.background) {
         Column(
             Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 40.dp),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text("FRIGATE", style = MaterialTheme.typography.labelLarge, color = FrigateColors.accent, fontWeight = FontWeight.Bold)
+            Text("FRIGATE", style = MaterialTheme.typography.labelLarge, color = PillAccent, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
-            Text("Sign in to\nyour cameras.", style = MaterialTheme.typography.displaySmall, color = FrigateColors.ink, fontWeight = FontWeight.SemiBold)
+            Text("Sign in to\nyour cameras.", style = MaterialTheme.typography.headlineMedium, color = FrigatePwaColors.foreground, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(12.dp))
-            Text(profile.baseUrl, style = MaterialTheme.typography.bodyMedium, color = FrigateColors.muted)
+            Text(profile.baseUrl, style = MaterialTheme.typography.bodyMedium, color = PillMuted)
             Spacer(Modifier.height(28.dp))
             OutlinedTextField(user, { user = it; message = null }, Modifier.fillMaxWidth(), label = { Text("Username") }, singleLine = true)
             Spacer(Modifier.height(12.dp))
@@ -305,14 +373,15 @@ private fun LoginScreen(
                 supportingText = { message?.let { Text(it) } },
             )
             Spacer(Modifier.height(20.dp))
-            Button(
-                onClick = { onLogin(user, password) },
+            PillButton(
+                "Sign in",
+                { onLogin(user, password) },
+                Modifier.fillMaxWidth().height(54.dp),
+                primary = true,
                 enabled = user.isNotBlank() && password.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-            ) { Text("Sign in", fontWeight = FontWeight.SemiBold) }
+            )
             Spacer(Modifier.height(10.dp))
-            Button(onClick = onChangeServer, modifier = Modifier.fillMaxWidth()) { Text("Change server") }
+            PillButton("Change server", onChangeServer, Modifier.fillMaxWidth())
         }
     }
 }
@@ -322,8 +391,8 @@ internal fun ConnectedApp(
     state: ConnectionState.Connected,
     activeScreen: AppScreen,
     onScreenChange: (AppScreen) -> Unit,
-    onDisconnect: () -> Unit,
     onUnauthorized: () -> Unit = {},
+    settings: ServerSettings,
 ) {
     val navigation = remember { HistoryNavigation() }
     // The grid lives above the branches of the screen, so the position of the cameras survives
@@ -386,44 +455,35 @@ internal fun ConnectedApp(
         navigation.close()
         onScreenChange(screen)
     }
-    val darkChrome = activeScreen != AppScreen.Settings || navigation.isOpen
     Scaffold(
-        containerColor = if (darkChrome) {
-            FrigatePwaColors.background
-        } else {
-            FrigateColors.canvas
-        },
+        containerColor = FrigatePwaColors.background,
         contentWindowInsets = if (hideChrome) WindowInsets(0, 0, 0, 0) else ScaffoldDefaults.contentWindowInsets,
         snackbarHost = { if (!pictureInPicture) SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (!hideChrome) NavigationBar(
                 modifier = Modifier.navigationBarsPadding(),
-                containerColor = if (darkChrome) {
-                    FrigatePwaColors.surface
-                } else {
-                    FrigateColors.surface
-                },
+                containerColor = FrigatePwaColors.surface,
             ) {
                 NavigationBarItem(
                     selected = activeScreen == AppScreen.Live,
                     onClick = { selectScreen(AppScreen.Live) },
                     icon = { Icon(Icons.Outlined.CameraAlt, null) },
                     label = { Text("Live") },
-                    colors = navigationItemColors(darkChrome),
+                    colors = navigationItemColors(),
                 )
                 NavigationBarItem(
                     selected = activeScreen == AppScreen.Events,
                     onClick = { selectScreen(AppScreen.Events) },
                     icon = { Icon(Icons.Outlined.Event, null) },
                     label = { Text("Events") },
-                    colors = navigationItemColors(darkChrome),
+                    colors = navigationItemColors(),
                 )
                 NavigationBarItem(
                     selected = activeScreen == AppScreen.Settings,
                     onClick = { selectScreen(AppScreen.Settings) },
                     icon = { Icon(Icons.Outlined.Settings, null) },
                     label = { Text("Settings") },
-                    colors = navigationItemColors(darkChrome),
+                    colors = navigationItemColors(),
                 )
             }
         },
@@ -487,25 +547,20 @@ internal fun ConnectedApp(
                     onMotion = { camera, time, grid -> navigation.openMotion(camera, time, eventsSession.state.value.query.range,
                         System.currentTimeMillis() / 1000.0, grid) }, modifier = Modifier.padding(padding))
                 }
-                AppScreen.Settings -> SettingsScreen(state, onDisconnect, Modifier.padding(padding))
+                AppScreen.Settings -> SettingsScreen(settings, Modifier.padding(padding))
             }
         }
     }
 }
 
 @Composable
-private fun navigationItemColors(isLive: Boolean) =
-    if (isLive) {
-        androidx.compose.material3.NavigationBarItemDefaults.colors(
-            selectedIconColor = FrigatePwaColors.foreground,
-            selectedTextColor = FrigatePwaColors.foreground,
-            unselectedIconColor = FrigatePwaColors.muted,
-            unselectedTextColor = FrigatePwaColors.muted,
-            indicatorColor = FrigatePwaColors.indicator,
-        )
-    } else {
-        androidx.compose.material3.NavigationBarItemDefaults.colors()
-    }
+private fun navigationItemColors() = androidx.compose.material3.NavigationBarItemDefaults.colors(
+    selectedIconColor = FrigatePwaColors.foreground,
+    selectedTextColor = FrigatePwaColors.foreground,
+    unselectedIconColor = FrigatePwaColors.muted,
+    unselectedTextColor = FrigatePwaColors.muted,
+    indicatorColor = FrigatePwaColors.indicator,
+)
 
 @androidx.media3.common.util.UnstableApi
 @Composable
@@ -555,63 +610,28 @@ private fun LiveScreen(
 }
 
 @Composable
-private fun SettingsScreen(state: ConnectionState.Connected, onDisconnect: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxSize().padding(20.dp)) {
-        Header("SETTINGS", "Connection")
-        Spacer(Modifier.height(18.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = FrigateColors.surface)) {
-            Column(Modifier.padding(20.dp)) {
-                Text(state.profile.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(5.dp))
-                Text(state.profile.baseUrl, style = MaterialTheme.typography.bodyMedium, color = FrigateColors.muted)
-                Spacer(Modifier.height(14.dp))
-                Text("Signed in as ${state.user.username}", style = MaterialTheme.typography.bodyMedium, color = FrigateColors.ink)
-                Text("Role: ${state.user.role}", style = MaterialTheme.typography.bodySmall, color = FrigateColors.muted)
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onDisconnect, modifier = Modifier.fillMaxWidth()) { Text("Sign out") }
-    }
-}
-
-@Composable
 private fun SetupScreen(onConnect: (ServerProfile) -> Unit) {
     var label by rememberSaveable { mutableStateOf("Home server") }
     var url by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
-    Surface(Modifier.fillMaxSize(), color = FrigateColors.canvas) {
+    Surface(Modifier.fillMaxSize(), color = FrigatePwaColors.background) {
         Column(Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 40.dp), verticalArrangement = Arrangement.Center) {
-            Text("FRIGATE", style = MaterialTheme.typography.labelLarge, color = FrigateColors.accent, fontWeight = FontWeight.Bold)
+            Text("FRIGATE", style = MaterialTheme.typography.labelLarge, color = PillAccent, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
-            Text("Your cameras,\nwithout the noise.", style = MaterialTheme.typography.displaySmall, color = FrigateColors.ink, fontWeight = FontWeight.SemiBold)
+            Text("Your cameras,\nwithout the noise.", style = MaterialTheme.typography.headlineMedium, color = FrigatePwaColors.foreground, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(14.dp))
-            Text("Connect to your Frigate server to see live cameras and recent events.", style = MaterialTheme.typography.bodyLarge, color = FrigateColors.muted)
+            Text("Connect to your Frigate server to see live cameras and recent events.", style = MaterialTheme.typography.bodyLarge, color = PillMuted)
             Spacer(Modifier.height(34.dp))
             OutlinedTextField(label, { label = it; error = null }, Modifier.fillMaxWidth(), label = { Text("Server name") }, singleLine = true)
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(url, { url = it; error = null }, Modifier.fillMaxWidth(), label = { Text("Server URL") }, placeholder = { Text("https://frigate.example.com") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), supportingText = { Text(error ?: "Use the address you normally open in the PWA.") }, isError = error != null)
             Spacer(Modifier.height(22.dp))
-            Button(onClick = { ServerProfile.fromInput(label, url).onSuccess(onConnect).onFailure { error = it.message } }, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp)) { Text("Continue", fontWeight = FontWeight.SemiBold) }
-        }
-    }
-}
-
-@Composable
-private fun Header(eyebrow: String, title: String) {
-    Column {
-        Text(eyebrow, style = MaterialTheme.typography.labelMedium, color = FrigateColors.accent, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(5.dp))
-        Text(title, style = MaterialTheme.typography.headlineLarge, color = FrigateColors.ink, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Composable
-private fun EmptyFeatureCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, body: String) {
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = FrigateColors.surface), shape = RoundedCornerShape(22.dp)) {
-        Row(Modifier.padding(22.dp), verticalAlignment = Alignment.Top) {
-            Box(Modifier.size(52.dp).background(FrigateColors.accentSoft, RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) { Icon(icon, null) }
-            Spacer(Modifier.width(16.dp))
-            Column { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Spacer(Modifier.height(7.dp)); Text(body, style = MaterialTheme.typography.bodyMedium, color = FrigateColors.muted) }
+            PillButton(
+                "Continue",
+                { ServerProfile.fromInput(label, url).onSuccess(onConnect).onFailure { error = it.message } },
+                Modifier.fillMaxWidth().height(54.dp),
+                primary = true,
+            )
         }
     }
 }
@@ -622,15 +642,6 @@ private fun Throwable.userMessage(): String = when (this) {
     else -> message ?: "Something went wrong."
 }
 
-
-private object FrigateColors {
-    val canvas = Color(0xFFF4F1EA)
-    val surface = Color(0xFFFFFCF6)
-    val ink = Color(0xFF20241F)
-    val muted = Color(0xFF6B7068)
-    val accent = Color(0xFFB64B2C)
-    val accentSoft = Color(0xFFF2D7C9)
-}
 
 private object FrigatePwaColors {
     val background = Color.Black

@@ -16,7 +16,7 @@ Both defects are covered by UiAutomator tests that run the installed app against
 - `LiveCameraTest.cameraOpensAndBackReturnsToTheGrid`: a tap on the camera opens the detail, Back returns to the grid.
 - `LiveFeedTest.activitySocketSurvivesTabSwitchesAndDeliversUpdatesWhileHidden`: an object update that arrives while Events is open is visible after returning to Live, the existing person stays, the activity connection count is 1.
 
-A debug-only cleartext allowlist for localhost/127.0.0.1 serves the local test servers. TLS verification was not disabled; the release manifest was not changed.
+Local test servers on localhost/127.0.0.1 are accepted as the main address over http. TLS verification is not disabled.
 
 ## Fresh check
 

@@ -16,7 +16,7 @@
 - `LiveCameraTest.cameraOpensAndBackReturnsToTheGrid`: tap камеры открывает detail, Back возвращает сетку.
 - `LiveFeedTest.activitySocketSurvivesTabSwitchesAndDeliversUpdatesWhileHidden`: обновление объектов, пришедшее при открытых Events, видно после возврата на Live, существующий person остаётся, число activity-соединений равно 1.
 
-Для локальных тестовых серверов служит debug-only cleartext allowlist localhost/127.0.0.1. TLS verification не отключалась, release manifest не изменён.
+Локальные тестовые серверы на localhost/127.0.0.1 принимаются как основной адрес по http. TLS verification не отключена.
 
 ## Свежая проверка
 

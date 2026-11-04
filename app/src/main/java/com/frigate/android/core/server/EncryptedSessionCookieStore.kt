@@ -21,7 +21,7 @@ class EncryptedSessionCookieStore(
     }
 
     private fun keyFor(profile: ServerProfile): String =
-        SESSION_PREFIX + profile.baseUrl.sha256()
+        SESSION_PREFIX + profile.primaryUrl.sha256()
 
     private companion object {
         const val SESSION_PREFIX = "encrypted_session_cookie_"

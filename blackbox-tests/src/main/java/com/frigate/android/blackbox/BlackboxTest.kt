@@ -73,7 +73,7 @@ abstract class BlackboxTest {
     protected val appId: String = requireArg("bbAppId")
     protected val mockUrl: String = "http://${requireArg("bbMockHost")}:${requireArg("bbMockPort")}"
 
-    private fun requireArg(name: String): String =
+    protected fun requireArg(name: String): String =
         args.getString(name)?.takeIf { it.isNotBlank() } ?: error("не задан аргумент instrumentation $name")
 
     protected fun control(path: String): String {
