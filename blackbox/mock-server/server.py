@@ -10,6 +10,7 @@ import os
 import re
 import secrets
 import signal
+import socket
 import sys
 import threading
 import time
@@ -112,7 +113,7 @@ ws_clients = []             # открытые /ws: (обработчик, за�
 ws_connections = 0          # принято /ws с момента reset
 
 HOLDABLE = ("preview-media", "motion")
-FAILABLE = ("viewed", "preview-media", "thumb")
+FAILABLE = ("viewed", "preview-media", "thumb", "login", "profile", "ws")
 
 
 def camera_config(camera_id):
@@ -134,6 +135,16 @@ def review_list():
         "thumb_path": "/media/frigate/clips/review/thumb-yard-bb-alert-1.webp",
         "data": {"objects": ["person"], "zones": [], "audio": [], "sub_labels": [], "detections": ["bb-event-1"]},
     }]
+
+
+def recording_coverage():
+    """Запись есть только вокруг фиксированного обзора: весь VOD, с 5 с до начала обзора — архив открывается за 4 с до него."""
+    if review_start is None or INIT is None:
+        return {"spans": [], "timelines": {}}
+    seconds = frag_ticks()[1] / 90000
+    start = review_start - 5
+    span = {"start_time": start, "end_time": start + seconds}
+    return {"spans": [{**span, "streams": ["main"]}], "timelines": {"auto": [{**span, "duration": seconds * 1000}]}}
 
 
 def png(width, height, rgb):
@@ -241,7 +252,7 @@ class Handler(BaseHTTPRequestHandler):
                 preview_mode = rest
             return self.send(200, {"ok": True})
         if name == "fail":
-            # /__control/fail/<имя>/<код>/<сколько раз>
+            # /__control/fail/<имя>/<код>/<сколько раз>; код 0 — сервер недоступен (соединение рвётся без ответа)
             what, code, times = (rest.split("/") + ["", "", ""])[:3]
             if what not in FAILABLE or not code.isdigit() or not times.isdigit():
                 return self.send(400, {"message": "bad failure"})
@@ -306,6 +317,14 @@ class Handler(BaseHTTPRequestHandler):
                 return False
             entry[1] -= 1
             code = entry[0]
+        if code == 0:
+            # Как заблокированная сеть или упавший туннель: ответа нет, клиент получает сетевую ошибку.
+            self.close_connection = True
+            try:
+                self.connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            return True
         self.send(code, {"message": "injected"})
         return True
 
@@ -335,6 +354,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.control(method, path)
 
         if path == "/api/login" and method == "POST":
+            if self.failed("login"):
+                return
             try:
                 creds = json.loads(self.body())
             except ValueError:
@@ -377,6 +398,8 @@ class Handler(BaseHTTPRequestHandler):
     def api(self, method, path):
         now = time.time()
         if path == "/api/profile":
+            if self.failed("profile"):
+                return
             return self.send(200, {"username": USER, "role": "admin", "allowed_cameras": None})
         if path == "/api/config":
             config = {"cameras": {camera: camera_config(camera) for camera in camera_ids}}
@@ -411,7 +434,7 @@ class Handler(BaseHTTPRequestHandler):
         if re.fullmatch(r"/api/[^/]+/recordings", path):
             return self.send(200, [])
         if re.fullmatch(r"/api/[^/]+/recordings/coverage", path):
-            return self.send(200, {"spans": [], "timelines": {}})
+            return self.send(200, recording_coverage())
         if path == "/api/reviews/viewed" and method == "POST":
             if self.failed("viewed"):
                 return
@@ -564,6 +587,8 @@ class Handler(BaseHTTPRequestHandler):
     def websocket(self):
         """/ws: считает подключения, в ответ на onConnect шлёт заданную активность, принимает push из /__control/ws/send."""
         global ws_connections
+        if self.failed("ws"):
+            return
         key = self.headers.get("Sec-WebSocket-Key")
         if not key or not self.authorized():
             return self.send(401, {})

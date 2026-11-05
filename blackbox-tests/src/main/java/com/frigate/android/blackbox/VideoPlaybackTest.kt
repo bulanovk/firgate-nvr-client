@@ -109,7 +109,36 @@ class VideoPlaybackTest : BlackboxTest() {
         awaitSquare(20_000)
     }
 
-    /** Звук приложения снаружи: плеер процесса приложения (`u/pid` в AudioPlaybackConfiguration) в состоянии started. */
+    /**
+     * Экран держится включённым, только пока видео действительно играет: в сетке без видео и на паузе архива — нет.
+     * Проверяется флаг окна, а не погасание экрана: с «не выключать при зарядке» экран не гаснет и без флага.
+     */
+    @Test
+    fun theScreenIsKeptOnOnlyWhileVideoPlays() {
+        openCamera()
+        awaitSquare()
+        awaitKeepsScreenOn(true)
+        tap(desc("Back to cameras"))
+        assertGridShown()
+        awaitKeepsScreenOn(false)
+
+        tap(By.pkg(appId).text(Pattern.compile(".* ago")))
+        assertVisible(desc("Back 10 seconds"), 15_000)
+        val frame = awaitSquare()
+        awaitKeepsScreenOn(true)
+        tapHistoryControl("Pause", frame)
+        awaitKeepsScreenOn(false)
+        tapHistoryControl("Play", frame)
+        awaitKeepsScreenOn(true)
+    }
+
+    /** Кнопки архива прячутся через 4 с; тап по кадру показывает их, не меняя воспроизведение. */
+    private fun tapHistoryControl(label: String, frame: Square) {
+        if (!device.hasObject(desc(label))) device.click(frame.centerX, frame.centerY)
+        tap(desc(label))
+    }
+
+    /** Звук приложения снаружи:плеер процесса приложения (`u/pid` в AudioPlaybackConfiguration) в состоянии started. */
     private fun appPlayers(): List<String> {
         val pid = device.executeShellCommand("pidof $appId").trim()
         if (pid.isEmpty()) return emptyList()

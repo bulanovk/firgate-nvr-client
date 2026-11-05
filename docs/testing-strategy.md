@@ -90,13 +90,15 @@ Check only with fresh PID/time, `mWakefulness=Awake`, MainActivity focused and a
 Matrix:
 
 - Saved session → Connected → real snapshots.
+- An expired session after a long screen-off is renewed without the login screen. An unreachable server (no network, a dropped tunnel, a proxy without its upstream) never asks for the password: the app waits for the server and reconnects by itself; only a refusal of the server (401) asks for it.
 - Idle → motion/tracking → native MSE first frame: the still stays until the current output frame, with no black gap.
 - Sustained playback; frame/time progress matched with transport delivery. The absence of transport logs alone does not prove a break.
 - End/stationary → 500 ms grace → still; new activity during the grace keeps the player.
 - Several active cameras; scrolling does not recreate a player that remains visible, and a player that leaves the threshold is released.
 - Media failure → still + Retry → fresh session/output identity.
 - Disabled/offline/recovery based on reliable data.
-- Events/Settings: media is released and polling cancelled, but the shared activity subscription is kept at the ConnectedApp level. Background/screen off/on/pause/resume: ON_STOP closes both transports, ON_START creates a fresh generation.
+- Events/Settings: media is released and polling cancelled, but the shared activity subscription is kept at the ConnectedApp level. Background/screen off/on/pause/resume: ON_STOP closes both transports, ON_START creates a fresh generation. While stopped the app asks the server nothing (the carousel too), and the camera activity seen before the stop is not shown as current.
+- The screen stays on only while a video actually plays: an open camera or a playing archive, not a grid of stills or a paused archive.
 - DIM while STARTED is checked separately: it is not a STOP, and loss of events is not considered fixed by a layout change.
 - Home address: on a home Wi-Fi the app uses the home address, on mobile data and on any other Wi-Fi the main one; Settings show which one is active (view mode; Edit/Save/Cancel; a changed main address asks to sign in again). The switch keeps the session (no new login), recreates the activity socket and the players, and sends the cookie only to the active origin. A dead home address falls back to the main one until the network changes. Revoking the location permission returns to the main address. Check the switch during Live, History and picture-in-picture.
 
@@ -119,7 +121,7 @@ Archive matrix:
 - Speed menu: opens on tap, contains all six PWA speeds, is readable on the dark background, survives the panel's hide timeout (4 s); the selected speed is actually applied (the position moves faster than real time).
 - Control panel buttons respond to a tap: Pause stops the picture, mute changes the icon, ±10 s move the position, "1x" opens the speed menu, the frame snapshot and fullscreen work. Check with a tap right after the panel appears: it hides after 4 s, and `screencap` over ADB takes longer, so the tap may land on the bare picture.
 - Moving to the next hourly chunk at the end of a recording: the playhead crosses the hour boundary without a gap, the camera OSD keeps running continuously, and the source change is visible in logcat; if the next chunk has no recording for the camera, playback stops normally, without an error message.
-- Lifecycle ON_STOP/ON_START and screen off/on — the same requirements as for live: media is released, transports are closed, a new generation is created.
+- Lifecycle ON_STOP/ON_START and screen off/on — the same requirements as for live: media is released, transports are closed, a new generation is created. The new player continues at the playhead, not at the anchor; so does the player of a renewed session, and the error of the expired one goes away.
 
 Note on instrumentation: `adb shell uiautomator dump` between two taps swallows the next tap (an artifact of the accessibility traversal) and gives a false diagnosis of "the button does not respond". For consecutive taps, use `screencap` without dump.
 

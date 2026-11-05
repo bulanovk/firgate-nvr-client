@@ -2,10 +2,13 @@ package com.frigate.android.feature.review
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import com.frigate.android.core.server.FrigateClient
 import com.frigate.android.core.server.FrigateRepository
 import com.frigate.android.core.server.ServerProfile
@@ -49,8 +52,20 @@ internal fun rememberReviewSession(
     DisposableEffect(controller) {
         onDispose { controller.close() }
     }
-    LaunchedEffect(controller, active, cameraIds) {
-        controller.setActive(active, cameraIds)
+    // A stopped app (the screen is off, another app is on top) asks the server nothing: the
+    // next start refreshes the list at once.
+    val owner = LocalContext.current as LifecycleOwner
+    DisposableEffect(controller, owner, active, cameraIds) {
+        var applied: Boolean? = null
+        fun update() {
+            val running = active && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            if (running != applied) controller.setActive(running, cameraIds)
+            applied = running
+        }
+        val observer = LifecycleEventObserver { _, _ -> update() }
+        owner.lifecycle.addObserver(observer)
+        update()
+        onDispose { owner.lifecycle.removeObserver(observer) }
     }
 
     return remember(controller) { ReviewSessionHandle(controller) }

@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.util.UnstableApi
+import com.frigate.android.feature.player.ScreenOnWhilePlaying
 
 @UnstableApi
 @Composable
@@ -61,6 +62,7 @@ internal class MseTextureView(
     init {
         surfaceTextureListener = this
         isOpaque = true
+        ScreenOnWhilePlaying(this, nativePlayer.player)
     }
 
     override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {

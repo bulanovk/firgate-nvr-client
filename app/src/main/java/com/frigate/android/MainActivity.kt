@@ -60,6 +60,7 @@ import androidx.compose.runtime.mutableStateListOf
 import com.frigate.android.core.server.HomeNetwork
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,8 +87,6 @@ import com.frigate.android.core.server.FrigateCamera
 import com.frigate.android.core.server.FrigateClient
 import com.frigate.android.core.server.FrigateCredentials
 import com.frigate.android.core.server.FrigateEvent
-import com.frigate.android.core.server.FrigateHttpException
-import com.frigate.android.core.server.FrigateNetworkException
 import com.frigate.android.core.server.FrigateProfile
 import com.frigate.android.core.server.FrigateRepository
 import com.frigate.android.core.server.FrigateReview
@@ -104,6 +103,11 @@ import com.frigate.android.ui.PillAccent
 import com.frigate.android.ui.PillButton
 import com.frigate.android.ui.PillMuted
 import com.frigate.android.ui.theme.FrigateTheme
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
@@ -123,6 +127,8 @@ internal enum class AppScreen { Live, Events, Settings }
 internal sealed interface ConnectionState {
     data object Loading : ConnectionState
     data class LoginRequired(val profile: ServerProfile, val message: String? = null) : ConnectionState
+    /** The server did not answer; the session and the credentials are kept and the app tries again. */
+    data class Unreachable(val profile: ServerProfile, val message: String) : ConnectionState
     data class Connected(
         val profile: ServerProfile,
         val user: FrigateProfile,
@@ -167,83 +173,95 @@ private fun FrigateApp() {
     var renewing by remember { mutableStateOf(false) }
 
     /**
-     * Signs in again with the stored credentials and keeps the session alive.
+     * One attempt to reach the server: with the stored session or, when the server no longer
+     * accepts it, with the stored credentials of the user.
      *
-     * The session of the server expires on its own; the credentials of the user are the way back
-     * in, so the user does not have to type the password again. Only a login that the server
-     * refuses itself ends at the sign in screen.
+     * The session of the server expires on its own; the credentials are the way back in, so the
+     * user does not type the password again. Only a login that the server refuses itself ends at
+     * the sign in screen; a server that does not answer is [ConnectionState.Unreachable].
+     * Null when the result no longer matters: the address in use changed meanwhile.
      */
-    suspend fun renewSessionOf(profile: ServerProfile) {
-        try {
-            val renewed = renewSession(profile, renewal)
-            if (renewed == null) {
-                connection = ConnectionState.LoginRequired(
-                    profile,
-                    "Session expired. Please sign in again.",
-                )
-            } else {
-                sessionStore.save(profile, renewed.sessionCookie)
-                connection = renewed
-            }
-        } catch (error: Throwable) {
-            connection = ConnectionState.LoginRequired(profile, error.userMessage())
+    suspend fun connect(profile: ServerProfile): ConnectionState? {
+        val legacyCookie = store.loadSession(profile)
+        val sessionCookie = sessionStore.load(profile) ?: legacyCookie
+        if (legacyCookie != null && sessionCookie == legacyCookie) {
+            sessionStore.save(profile, legacyCookie)
+            store.clearSession(profile)
         }
+        val next = try {
+            if (sessionCookie.isNullOrBlank()) {
+                // Without a cookie the credentials of the user are the only way in.
+                val cookie = renewal.renew(profile) { credentials -> signIn(profile, credentials) }
+                // Nobody has typed a password yet: the sign in screen opens without an error.
+                if (cookie == null) {
+                    ConnectionState.LoginRequired(profile)
+                } else {
+                    loadConnectedState(profile, FrigateClient(profile, cookie))
+                }
+            } else {
+                try {
+                    loadConnectedState(profile, FrigateClient(profile, sessionCookie))
+                } catch (error: Throwable) {
+                    if (!isUnauthorized(error)) throw error
+                    // The session of the server expired: the app signs in again by itself.
+                    val cookie = renewal.renew(profile) { credentials ->
+                        signIn(profile, credentials)
+                    } ?: throw error
+                    loadConnectedState(profile, FrigateClient(profile, cookie))
+                }
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            if (route?.active != profile) return null
+            if (!isUnauthorized(error) && route?.endpoint == Endpoint.Home) {
+                // The home address does not answer: the main one takes over until the network changes.
+                route = route?.homeFailed()
+                return null
+            }
+            if (isUnauthorized(error)) {
+                sessionStore.clear(profile)
+                store.clearSession(profile)
+                // The credentials of the user are dropped by the renewal itself, and only
+                // when the server refuses the login.
+            }
+            connectionFailure(profile, error)
+        }
+        if (next is ConnectionState.Connected) sessionStore.save(profile, next.sessionCookie)
+        // The network may have changed while the server was answering.
+        return next.takeIf { route?.active == profile }
     }
 
     LaunchedEffect(route?.active, waitingForNetwork) {
-        connection = route?.active?.takeIf { !waitingForNetwork }?.let { profile ->
-            val legacyCookie = store.loadSession(profile)
-            val sessionCookie = sessionStore.load(profile) ?: legacyCookie
-            if (legacyCookie != null && sessionCookie == legacyCookie) {
-                sessionStore.save(profile, legacyCookie)
-                store.clearSession(profile)
+        connection = ConnectionState.Loading
+        val profile = route?.active?.takeIf { !waitingForNetwork } ?: return@LaunchedEffect
+        scope.launch { connect(profile)?.let { connection = it } }
+    }
+
+    // A server that does not answer is asked again while the app is on screen: after the screen
+    // comes back on, the network that the system blocked returns a moment later.
+    val unreachable = (connection as? ConnectionState.Unreachable)?.profile
+    var retryRequest by remember { mutableIntStateOf(0) }
+    val lifecycleOwner = context as LifecycleOwner
+    LaunchedEffect(unreachable, retryRequest) {
+        val profile = unreachable ?: return@LaunchedEffect
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            var failures = 0
+            while (true) {
+                delay(reconnectPauseMillis(failures))
+                val next = connect(profile) ?: return@repeatOnLifecycle
+                connection = next
+                if (next !is ConnectionState.Unreachable) return@repeatOnLifecycle
+                failures++
             }
-            scope.launch {
-                try {
-                    val connected = if (sessionCookie.isNullOrBlank()) {
-                        // Without a cookie the credentials of the user are the only way in.
-                        val cookie = renewal.renew(profile) { credentials ->
-                            signIn(profile, credentials)
-                        }
-                        if (cookie == null) {
-                            // Nobody has typed a password yet: the sign in screen opens without an error.
-                            if (route?.active == profile) connection = ConnectionState.LoginRequired(profile)
-                            return@launch
-                        }
-                        loadConnectedState(profile, FrigateClient(profile, cookie))
-                    } else {
-                        try {
-                            loadConnectedState(profile, FrigateClient(profile, sessionCookie))
-                        } catch (error: Throwable) {
-                            if (!isUnauthorized(error)) throw error
-                            // The session of the server expired: the app signs in again by itself.
-                            val cookie = renewal.renew(profile) { credentials ->
-                                signIn(profile, credentials)
-                            } ?: throw error
-                            loadConnectedState(profile, FrigateClient(profile, cookie))
-                        }
-                    }
-                    sessionStore.save(profile, connected.sessionCookie)
-                    // The network may have changed while the server was answering.
-                    if (route?.active == profile) connection = connected
-                } catch (error: Throwable) {
-                    if (route?.active != profile) return@launch
-                    if (!isUnauthorized(error) && route?.endpoint == Endpoint.Home) {
-                        // The home address does not answer: the main one takes over until the network changes.
-                        route = route?.homeFailed()
-                        return@launch
-                    }
-                    if (isUnauthorized(error)) {
-                        sessionStore.clear(profile)
-                        store.clearSession(profile)
-                        // The credentials of the user are dropped by the renewal itself, and only
-                        // when the server refuses the login.
-                    }
-                    connection = ConnectionState.LoginRequired(profile, error.userMessage())
-                }
-            }
-            ConnectionState.Loading
-        } ?: ConnectionState.Loading
+        }
+    }
+
+    fun forgetServer(profile: ServerProfile) {
+        sessionStore.clear(profile)
+        store.clear()
+        useServer(null)
+        connection = ConnectionState.Loading
     }
 
     when (val state = connection) {
@@ -277,12 +295,13 @@ private fun FrigateApp() {
                     }
                 }
             },
-            onChangeServer = {
-                sessionStore.clear(state.profile)
-                store.clear()
-                useServer(null)
-                connection = ConnectionState.Loading
-            },
+            onChangeServer = { forgetServer(state.profile) },
+        )
+        is ConnectionState.Unreachable -> UnreachableScreen(
+            profile = state.profile,
+            message = state.message,
+            onRetry = { retryRequest++ },
+            onChangeServer = { forgetServer(state.profile) },
         )
         is ConnectionState.Connected -> ConnectedApp(
             state = state,
@@ -305,12 +324,7 @@ private fun FrigateApp() {
                     if (mainChanged) connection = ConnectionState.Loading
                 },
                 onPermissionChanged = networkMonitor::refresh,
-                onSignOut = {
-                    sessionStore.clear(state.profile)
-                    store.clear()
-                    useServer(null)
-                    connection = ConnectionState.Loading
-                },
+                onSignOut = { forgetServer(state.profile) },
             ),
             onUnauthorized = expired@{
                 // The session of the server expired: the cookie is spent, but the credentials of
@@ -321,7 +335,13 @@ private fun FrigateApp() {
                 sessionStore.clear(state.profile)
                 scope.launch {
                     try {
-                        renewSessionOf(state.profile)
+                        connect(state.profile)?.let { next ->
+                            connection = if (next is ConnectionState.LoginRequired && next.message == null) {
+                                next.copy(message = "Session expired. Please sign in again.")
+                            } else {
+                                next
+                            }
+                        }
                     } finally {
                         renewing = false
                     }
@@ -380,6 +400,41 @@ private fun LoginScreen(
                 primary = true,
                 enabled = user.isNotBlank() && password.isNotEmpty(),
             )
+            Spacer(Modifier.height(10.dp))
+            PillButton("Change server", onChangeServer, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/**
+ * The server did not answer: the session and the credentials are kept, the app asks the server
+ * again by itself while it is on screen, and the user can ask right away or pick another server.
+ */
+@Composable
+private fun UnreachableScreen(
+    profile: ServerProfile,
+    message: String,
+    onRetry: () -> Unit,
+    onChangeServer: () -> Unit,
+) {
+    Surface(Modifier.fillMaxSize(), color = FrigatePwaColors.background) {
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 40.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text("FRIGATE", style = MaterialTheme.typography.labelLarge, color = PillAccent, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(16.dp))
+            Text("Waiting for\nyour cameras.", style = MaterialTheme.typography.headlineMedium, color = FrigatePwaColors.foreground, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(12.dp))
+            Text(profile.baseUrl, style = MaterialTheme.typography.bodyMedium, color = PillMuted)
+            Spacer(Modifier.height(28.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(Modifier.size(18.dp), color = PillAccent, strokeWidth = 2.dp)
+                Spacer(Modifier.width(12.dp))
+                Text(message, style = MaterialTheme.typography.bodyMedium, color = FrigatePwaColors.foreground)
+            }
+            Spacer(Modifier.height(28.dp))
+            PillButton("Retry", onRetry, Modifier.fillMaxWidth().height(54.dp), primary = true)
             Spacer(Modifier.height(10.dp))
             PillButton("Change server", onChangeServer, Modifier.fillMaxWidth())
         }
@@ -634,12 +689,6 @@ private fun SetupScreen(onConnect: (ServerProfile) -> Unit) {
             )
         }
     }
-}
-
-private fun Throwable.userMessage(): String = when (this) {
-    is FrigateHttpException -> if (code == 401) "Invalid username or password." else "Frigate returned HTTP $code."
-    is FrigateNetworkException -> "Could not reach Frigate. Check the URL and network."
-    else -> message ?: "Something went wrong."
 }
 
 
