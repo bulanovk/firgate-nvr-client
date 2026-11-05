@@ -12,9 +12,10 @@ android {
         minSdk = 31
         targetSdk = 35
         versionCode = 1
-        // CI appends a build suffix (`-PappVersionSuffix=-test.12+abc1234`) to tell test builds apart.
+        // A release build gets its version from the tag (`-PappVersionName=0.0.1`); CI appends a build suffix
+        // (`-PappVersionSuffix=-test.12+abc1234`) to tell test builds apart.
         // versionCode stays 1 on purpose: a growing code would block `adb install -r` of local builds.
-        versionName = "0.1.0" + (providers.gradleProperty("appVersionSuffix").orNull ?: "")
+        versionName = (providers.gradleProperty("appVersionName").orNull ?: "0.1.0") + (providers.gradleProperty("appVersionSuffix").orNull ?: "")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Only ARM devices: no x86/x86_64 native libraries in the APK.

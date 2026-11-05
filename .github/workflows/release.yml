@@ -1,0 +1,74 @@
+name: Release
+
+# Pushing a tag `vX.Y.Z` builds the release (R8-shrunk) APK and publishes a GitHub Release with it.
+# The version of the app comes from the tag. The notes come from `.github/release-notes/<tag>.md`
+# when that file exists, otherwise GitHub generates them from the merged pull requests.
+#
+# The APK is signed with the debug key from the repository secret DEBUG_KEYSTORE_BASE64, the same
+# key as the test builds, so Android installs it over the existing app (uninstalling would erase
+# the app data). Only tags of this repository reach the key; the tag has to point at a commit of main.
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: The tag must be on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::$TAG is not on main"; exit 1; }
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Restore the debug signing key
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "::error::The secret DEBUG_KEYSTORE_BASE64 is not set. Without it the APK would get a random key and could not update the installed app."
+            exit 1
+          fi
+          mkdir -p "$HOME/.android"
+          printf '%s' "$DEBUG_KEYSTORE_BASE64" | base64 -d > "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+
+      - name: Test and build the release APK
+        run: ./gradlew testDebugUnitTest assembleRelease "-PappVersionName=${TAG#v}"
+
+      - name: Show the signing certificate
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk | grep 'certificate SHA-256'
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apk="frigate-android-${TAG#v}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$apk"
+          notes=".github/release-notes/$TAG.md"
+          if [ -f "$notes" ]; then notes_args=(--notes-file "$notes"); else notes_args=(--generate-notes); fi
+          gh release create "$TAG" "$apk" --verify-tag --title "Frigate Android ${TAG#v}" "${notes_args[@]}"
