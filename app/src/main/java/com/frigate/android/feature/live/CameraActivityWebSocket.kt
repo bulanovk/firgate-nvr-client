@@ -55,7 +55,10 @@ internal class CameraActivityWebSocket(
         webSocket?.close(1000, "Stopped")
         webSocket = null
         client.dispatcher.cancelAll()
+        // What the cameras saw before the stop is not their state now: the screen shows nothing
+        // until the next snapshot of the server.
         activityState = CameraActivityState()
+        onActivityChanged(emptyMap())
     }
 
     private fun connect() {

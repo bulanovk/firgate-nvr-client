@@ -334,6 +334,65 @@ abstract class BlackboxTest {
         device.executeShellCommand("input keyevent KEYCODE_SHIFT_LEFT")
     }
 
+    /**
+     * Сколько видеодекодеров держит процесс приложения (по `dumpsys media.resource_manager`, строка
+     * `PID[<pid>]: Current Codec Usage: { VideoDec[ HW: n ] }`). Освобождение декодера видно только снаружи процесса.
+     */
+    protected fun videoDecoders(): Int {
+        val pid = device.executeShellCommand("pidof $appId").trim().split(Regex("\\s+")).firstOrNull().orEmpty()
+        check(pid.isNotEmpty()) { "процесс приложения не найден" }
+        val usage = Regex("PID\\[$pid]: Current Codec Usage: \\{ VideoDec\\[([^\\]]*)]")
+            .find(device.executeShellCommand("dumpsys media.resource_manager")) ?: return 0
+        return Regex("\\d+").findAll(usage.groupValues[1]).sumOf { it.value.toInt() }
+    }
+
+    protected fun awaitNoDecoders(timeoutMs: Long = 10_000) {
+        val deadline = android.os.SystemClock.uptimeMillis() + timeoutMs
+        while (android.os.SystemClock.uptimeMillis() < deadline && videoDecoders() > 0) {
+            keepScreenOn()
+            android.os.SystemClock.sleep(500)
+        }
+        org.junit.Assert.assertEquals("декодеры должны быть освобождены", 0, videoDecoders())
+    }
+
+    /**
+     * Окно приложения держит экран включённым: флаг `FLAG_KEEP_SCREEN_ON` (0x80) в строке `fl=` его блока
+     * `dumpsys window windows`. По этому флагу система и решает, гасить ли экран по таймауту.
+     */
+    protected fun keepsScreenOn(): Boolean {
+        val dump = device.executeShellCommand("dumpsys window windows")
+        val start = dump.indexOf("u0 $appId/com.frigate.android.MainActivity}:")
+        check(start >= 0) { "окно приложения не найдено в dumpsys window" }
+        val flags = Regex("\\bfl=([0-9a-fA-F]+)\\b").find(dump, start)?.groupValues?.get(1)
+            ?: error("флаги окна приложения не найдены")
+        return flags.toLong(16) and 0x80L != 0L
+    }
+
+    protected fun awaitKeepsScreenOn(expected: Boolean, timeoutMs: Long = 10_000) {
+        val deadline = SystemClock.uptimeMillis() + timeoutMs
+        while (SystemClock.uptimeMillis() < deadline) {
+            if (keepsScreenOn() == expected) return
+            keepScreenOn()
+            SystemClock.sleep(300)
+        }
+        org.junit.Assert.fail(if (expected) "окно не держит экран включённым" else "окно держит экран включённым, хотя видео не играет")
+    }
+
+    /** Гасит экран, как кнопка питания, и проверяет, что он действительно погас. */
+    protected fun screenOff() {
+        device.sleep()
+        val deadline = SystemClock.uptimeMillis() + 5_000
+        while (device.isScreenOn && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(200)
+        check(!device.isScreenOn) { "экран не погас" }
+    }
+
+    /** Включает экран; блокировка без пароля снимается, как это сделал бы пользователь. */
+    protected fun screenOn() {
+        device.wakeUp()
+        device.executeShellCommand("wm dismiss-keyguard")
+        assertVisible(By.pkg(appId).depth(0), 15_000)
+    }
+
     protected fun assertPlaying(
         samples: Int = 8,
         intervalMs: Long = 1_000,

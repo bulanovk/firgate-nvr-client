@@ -43,17 +43,3 @@ internal suspend fun signIn(profile: ServerProfile, credentials: FrigateCredenti
     FrigateRepository(client).login(credentials.username, credentials.password)
     return client.cookieHeader()
 }
-
-/**
- * Signs in again with the stored credentials and loads the state of the new session.
- *
- * The session of the server expires on its own; the credentials of the user are the way back in.
- * Without them the result is null and the user signs in by hand.
- */
-internal suspend fun renewSession(
-    profile: ServerProfile,
-    renewal: SessionRenewal,
-): ConnectionState.Connected? {
-    val cookie = renewal.renew(profile) { credentials -> signIn(profile, credentials) } ?: return null
-    return loadConnectedState(profile, FrigateClient(profile, cookie))
-}

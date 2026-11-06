@@ -68,4 +68,30 @@ class ConnectionHelpersTest {
             assertEquals(listOf("/api/profile","/api/config"), paths)
         }
     }
+
+    @Test
+    fun onlyARefusalOfTheServerAsksForThePassword() {
+        val profile = ServerProfile("Test", "https://nvr.example/")
+        assertEquals(
+            ConnectionState.LoginRequired(profile, "Invalid username or password."),
+            connectionFailure(profile, FrigateHttpException(401, "unauthorized")),
+        )
+        // A blocked network, a dropped tunnel and a proxy without its upstream are not a refusal.
+        assertEquals(
+            ConnectionState.Unreachable(profile, "Could not reach Frigate. Check the URL and network."),
+            connectionFailure(profile, FrigateNetworkException("timeout", java.io.IOException("timeout"))),
+        )
+        assertEquals(
+            ConnectionState.Unreachable(profile, "Frigate returned HTTP 502."),
+            connectionFailure(profile, FrigateHttpException(502, "bad gateway")),
+        )
+    }
+
+    @Test
+    fun theReconnectPauseDoublesUpToHalfAMinute() {
+        assertEquals(
+            listOf(1_000L, 2_000L, 4_000L, 8_000L, 16_000L, 30_000L, 30_000L),
+            (0..6).map(::reconnectPauseMillis),
+        )
+    }
 }

@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +61,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -71,6 +75,7 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.frigate.android.core.server.ServerProfile
 import com.frigate.android.core.server.TimelineSpan
 import com.frigate.android.feature.player.PlayerZoomState
+import com.frigate.android.feature.player.ScreenOnWhilePlaying
 import com.frigate.android.feature.player.playerZoomGestures
 import com.frigate.android.feature.player.playerZoomLabel
 import com.frigate.android.feature.player.playerZoomTransform
@@ -93,6 +98,11 @@ private const val CONTROLS_POLL_MILLIS = 250L
  *
  * The two positions of the player answer different questions: a rebuilt source continues at the
  * playhead, an explicit seek of the user lands on the anchor of the session.
+ *
+ * The player lives while the app is started and belongs to one session. A stopped app (the screen
+ * is off, another app is on top) holds no player, no decoder and no request; the next start and a
+ * renewed session build a new player that continues at the playhead. The error of a player goes
+ * with it: the new one tries again.
  */
 @UnstableApi
 @Composable
@@ -115,9 +125,52 @@ internal fun HistoryVideoPlayer(
     modifier: Modifier = Modifier,
     zoom: PlayerZoomState = rememberPlayerZoomState(),
 ) {
+    val owner = LocalContext.current as LifecycleOwner
+    var started by remember(owner) { mutableStateOf(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) }
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, _ -> started = owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    // Another recording is another frame: the zoom of the previous one does not fit it. The zoom
+    // belongs to the recording, so a new player of the same recording keeps it.
+    LaunchedEffect(playlistUrl, controller.retryToken) { zoom.reset() }
+    if (!started) {
+        Box(modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color.Black))
+        return
+    }
+    key(profile, cookie) {
+        StartedHistoryVideoPlayer(
+            profile, cookie, playlistUrl, startPositionSeconds, seekPositionSeconds, seekToken, segments,
+            inpointOffset, controller, onSeekBy, onEnded, onError, onSnapshot, onFullscreen, fullscreen, modifier, zoom,
+        )
+    }
+}
+
+@UnstableApi
+@Composable
+private fun StartedHistoryVideoPlayer(
+    profile: ServerProfile,
+    cookie: String,
+    playlistUrl: String?,
+    startPositionSeconds: () -> Double?,
+    seekPositionSeconds: Double?,
+    seekToken: Int,
+    segments: List<TimelineSpan>,
+    inpointOffset: Double,
+    controller: HistoryPlayerController,
+    onSeekBy: (Double) -> Unit,
+    onEnded: () -> Unit,
+    onError: (HistoryError) -> Unit,
+    onSnapshot: (Bitmap) -> Unit,
+    onFullscreen: () -> Unit,
+    fullscreen: Boolean,
+    modifier: Modifier,
+    zoom: PlayerZoomState,
+) {
     val context = LocalContext.current
-    val dataSourceFactory = remember(profile, cookie) { HistoryHlsDataSourceFactory.create(profile, cookie) }
-    val player = remember(profile, cookie) { ExoPlayer.Builder(context).build() }
+    val dataSourceFactory = remember { HistoryHlsDataSourceFactory.create(profile, cookie) }
+    val player = remember { ExoPlayer.Builder(context).build() }
     val currentOnError = rememberUpdatedState(onError)
     val currentOnSnapshot = rememberUpdatedState(onSnapshot)
     val currentOnEnded = rememberUpdatedState(onEnded)
@@ -135,11 +188,10 @@ internal fun HistoryVideoPlayer(
     DisposableEffect(player) {
         onDispose { player.release() }
     }
+    LaunchedEffect(player) { controller.onError(null) }
 
     LaunchedEffect(playlistUrl, controller.retryToken) {
         val url = playlistUrl
-        // Another recording is another frame: the zoom of the previous one does not fit it.
-        zoom.reset()
         if (url == null) {
             hasFrame = false
             controller.onLoading(true)
@@ -186,9 +238,11 @@ internal fun HistoryVideoPlayer(
 
     // The explicit seek of the user moves the player inside the manifest that is already open. The
     // key is the seek counter alone: the position of the playhead changes with every frame and
-    // would turn the effect into a seek that runs four times a second.
+    // would turn the effect into a seek that runs four times a second. A seek made before this
+    // player was built is already in the playhead it starts at, so only a later one moves it.
+    val seekTokenAtStart = remember { seekToken }
     LaunchedEffect(seekToken) {
-        if (player.playbackState == Player.STATE_IDLE) return@LaunchedEffect
+        if (seekToken == seekTokenAtStart || player.playbackState == Player.STATE_IDLE) return@LaunchedEffect
         seekPositionSeconds?.let { player.seekTo((it * 1000).toLong()) }
     }
 
@@ -481,6 +535,7 @@ private class HistoryTextureView(
 
     init {
         surfaceTextureListener = this
+        ScreenOnWhilePlaying(this, player)
     }
 
     /**
