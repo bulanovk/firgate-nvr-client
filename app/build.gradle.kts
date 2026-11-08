@@ -16,6 +16,9 @@ android {
         // (`-PappVersionSuffix=-test.12+abc1234`) to tell test builds apart.
         // versionCode stays 1 on purpose: a growing code would block `adb install -r` of local builds.
         versionName = (providers.gradleProperty("appVersionName").orNull ?: "0.1.0") + (providers.gradleProperty("appVersionSuffix").orNull ?: "")
+        // Where the build updates itself from: `release` (GitHub releases), `dev` (test builds of main), or
+        // nothing for a local build.
+        buildConfigField("String", "UPDATE_CHANNEL", "\"${providers.gradleProperty("appUpdateChannel").orNull ?: "none"}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Only ARM devices: no x86/x86_64 native libraries in the APK.
@@ -48,6 +51,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
