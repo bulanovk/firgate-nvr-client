@@ -59,6 +59,24 @@ class MainActivityManifestTest {
         assertTrue(File(manifestFile().parentFile, "res/xml/network_security_config.xml").isFile)
     }
 
+    @Test
+    fun manifestDeclaresWhatSelfUpdateNeeds() {
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(manifestFile())
+        val permissions = document.getElementsByTagName("uses-permission")
+        val declared = (0 until permissions.length).map { (permissions.item(it) as Element).getAttribute("android:name") }.toSet()
+        val required = setOf(
+            "android.permission.REQUEST_INSTALL_PACKAGES",
+            "android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION",
+        )
+        assertTrue(declared.containsAll(required), "Missing permissions: ${required - declared}")
+
+        val receivers = document.getElementsByTagName("receiver")
+        val receiver = (0 until receivers.length).map { receivers.item(it) as Element }
+            .singleOrNull { it.getAttribute("android:name") == ".core.update.UpdateInstallReceiver" }
+        assertTrue(receiver != null, "The installer reports the result of the update to UpdateInstallReceiver")
+        assertTrue(receiver!!.getAttribute("android:exported") == "false", "Only the system installer may report to it")
+    }
+
     private fun configChangesOfMainActivity(): Set<String> {
         val document = DocumentBuilderFactory.newInstance()
             .newDocumentBuilder()

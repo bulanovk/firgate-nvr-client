@@ -56,7 +56,7 @@ jobs:
           chmod 600 "$HOME/.android/debug.keystore"
 
       - name: Test and build the release APK
-        run: ./gradlew testDebugUnitTest assembleRelease "-PappVersionName=${TAG#v}"
+        run: ./gradlew testDebugUnitTest assembleRelease -PappUpdateChannel=release "-PappVersionName=${TAG#v}"
 
       - name: Show the signing certificate
         run: |

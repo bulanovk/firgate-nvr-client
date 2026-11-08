@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!-- Android shows the SSID of the Wi-Fi only to apps with the location permission. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- The app updates itself from the GitHub release or the test build of its channel. Without
+         the user action permission Android asks to confirm every update, not only the first one. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <application
         android:allowBackup="true"
@@ -28,5 +32,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- The system installer reports the result of an update here. -->
+        <receiver
+            android:name=".core.update.UpdateInstallReceiver"
+            android:exported="false" />
     </application>
 </manifest>

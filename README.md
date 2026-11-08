@@ -14,6 +14,7 @@ This is an independent client. It is not part of Frigate and is not developed by
 - **Events** — a list of events with filters by object and zone.
 - **Sign in once** — the app remembers the server and renews the session without asking for your password again.
 - **Home and away addresses** — set a direct local address and your home Wi-Fi networks in Settings (view mode; Edit opens one form for the main address, the home address and the networks). Changing the main address signs you out. At home the app uses the local address, everywhere else the main one. Android shows the Wi-Fi name only with the location permission; without it the main address is used.
+- **Version and updates** — Settings shows the version of the app. Release builds check the GitHub releases, test builds check the newest test build of `main`. The check runs at most every 6 hours; «Check now» asks at once, and the switch turns the automatic check off. Android asks once to allow the app to install apps; later updates install after you tap «Update». Local builds do not update themselves.
 
 ## Requirements
 

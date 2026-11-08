@@ -38,6 +38,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -77,6 +79,7 @@ import com.frigate.android.core.network.AndroidNetworkMonitor
 import com.frigate.android.core.network.Endpoint
 import com.frigate.android.feature.settings.ServerSettings
 import com.frigate.android.feature.settings.SettingsScreen
+import com.frigate.android.core.update.AppUpdates
 import com.frigate.android.core.network.NetworkSnapshot
 import com.frigate.android.core.network.Route
 import com.frigate.android.core.server.AndroidEncryptedCredentialsStore
@@ -243,6 +246,11 @@ private fun FrigateApp() {
     val unreachable = (connection as? ConnectionState.Unreachable)?.profile
     var retryRequest by remember { mutableIntStateOf(0) }
     val lifecycleOwner = context as LifecycleOwner
+    val updates = remember { AppUpdates(context, scope) }
+    // The app asks its channel for a newer build when it comes to the front, at most every few hours.
+    LaunchedEffect(updates) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) { updates.checkIfDue() }
+    }
     LaunchedEffect(unreachable, retryRequest) {
         val profile = unreachable ?: return@LaunchedEffect
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -325,6 +333,7 @@ private fun FrigateApp() {
                 },
                 onPermissionChanged = networkMonitor::refresh,
                 onSignOut = { forgetServer(state.profile) },
+                updates = updates,
             ),
             onUnauthorized = expired@{
                 // The session of the server expired: the cookie is spent, but the credentials of
@@ -536,7 +545,12 @@ internal fun ConnectedApp(
                 NavigationBarItem(
                     selected = activeScreen == AppScreen.Settings,
                     onClick = { selectScreen(AppScreen.Settings) },
-                    icon = { Icon(Icons.Outlined.Settings, null) },
+                    icon = {
+                        // A newer build waits in the settings.
+                        BadgedBox(badge = { if (settings.updates.updateAvailable) Badge() }) {
+                            Icon(Icons.Outlined.Settings, null)
+                        }
+                    },
                     label = { Text("Settings") },
                     colors = navigationItemColors(),
                 )

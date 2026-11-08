@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +42,9 @@ import com.frigate.android.core.network.Endpoint
 import com.frigate.android.core.network.NetworkSnapshot
 import com.frigate.android.core.server.HomeNetwork
 import com.frigate.android.core.server.ServerProfile
+import com.frigate.android.core.update.AppUpdates
+import com.frigate.android.core.update.UpdateChannel
+import com.frigate.android.core.update.UpdateState
 import com.frigate.android.feature.events.eventsColorScheme
 import com.frigate.android.ui.PillAccent
 import com.frigate.android.ui.PillButton
@@ -58,6 +62,7 @@ internal class ServerSettings(
     val onSave: (profile: ServerProfile, mainChanged: Boolean) -> Unit,
     val onPermissionChanged: () -> Unit,
     val onSignOut: () -> Unit,
+    val updates: AppUpdates,
 )
 
 private val muted = PillMuted
@@ -132,7 +137,51 @@ private fun SettingsView(settings: ServerSettings, onEdit: () -> Unit) {
     InfoRow("Role", settings.role)
     Spacer(Modifier.height(18.dp))
     Row(Modifier.padding(horizontal = 4.dp)) { PillButton("Sign out", settings.onSignOut) }
+    AppSection(settings.updates)
     Spacer(Modifier.height(24.dp))
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AppSection(updates: AppUpdates) {
+    SectionTitle("App")
+    InfoRow("Version", updates.version)
+    InfoRow("Updates from", when (updates.channel) {
+        UpdateChannel.Release -> "Releases"
+        UpdateChannel.Dev -> "Test builds of main"
+        UpdateChannel.None -> "Local build: updates are off"
+    })
+    if (updates.channel == UpdateChannel.None) return
+    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("Automatically check for updates", Modifier.weight(1f), color = Color.White, style = MaterialTheme.typography.bodyLarge)
+        Switch(updates.autoCheck, updates::changeAutoCheck)
+    }
+    HorizontalDivider(color = Color(0xFF1C1C1C))
+    val state = updates.state
+    updateStatus(state)?.let { (text, color) ->
+        Text(text, Modifier.padding(horizontal = 4.dp, vertical = 9.dp), color = color, style = MaterialTheme.typography.bodyLarge)
+    }
+    val notes = (state as? UpdateState.Available)?.update?.notes
+    if (notes != null) {
+        Text(notes, Modifier.padding(horizontal = 4.dp, vertical = 4.dp), color = muted, style = MaterialTheme.typography.bodySmall)
+    }
+    val working = state is UpdateState.Checking || state is UpdateState.Downloading || state is UpdateState.Installing
+    FlowRow(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (updates.updateAvailable) PillButton("Update", updates::install, primary = true, enabled = !working)
+        PillButton("Check now", updates::check, enabled = !working)
+    }
+}
+
+private fun updateStatus(state: UpdateState): Pair<String, Color>? = when (state) {
+    UpdateState.Idle -> null
+    UpdateState.Checking -> "Checking for updates…" to muted
+    UpdateState.UpToDate -> "Up to date" to muted
+    is UpdateState.Available -> "Version ${state.update.versionName} is available" to accent
+    is UpdateState.Downloading -> "Downloading ${state.update.versionName}" + (state.percent?.let { " — $it%" } ?: "…") to muted
+    is UpdateState.Installing -> "Installing ${state.update.versionName}…" to muted
+    is UpdateState.NeedsPermission ->
+        "Allow this app to install apps in the system settings, then tap Update again." to warning
+    is UpdateState.Failed -> state.message to warning
 }
 
 private fun HomeNetwork.label() = bssid?.let { "$ssid ($it)" } ?: ssid

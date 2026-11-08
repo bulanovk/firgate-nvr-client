@@ -65,7 +65,7 @@ jobs:
           chmod 600 "$HOME/.android/debug.keystore"
 
       - name: Build the test APK
-        run: ./gradlew assembleRelease "-PappVersionSuffix=-test.${CI_RUN_NUMBER}+${HEAD_SHA::7}"
+        run: ./gradlew assembleRelease -PappUpdateChannel=dev "-PappVersionSuffix=-test.${CI_RUN_NUMBER}+${HEAD_SHA::7}"
 
       - name: Show the signing certificate
         run: |
@@ -76,6 +76,13 @@ jobs:
         run: |
           mkdir site
           cp app/build/outputs/apk/release/app-release.apk site/frigate-android-test.apk
+          # The test builds of the app check this file for a newer build (GitHubUpdateFeed).
+          aapt2="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/aapt2"
+          version_name="$("$aapt2" dump badging site/frigate-android-test.apk | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")"
+          [ -n "$version_name" ] || { echo "::error::No versionName in the APK"; exit 1; }
+          printf '{"versionName":"%s","build":%s,"commit":"%s","apk":"frigate-android-test.apk"}\n' \
+            "$version_name" "$CI_RUN_NUMBER" "$HEAD_SHA" > site/version.json
+          cat site/version.json
           cat > site/index.html <<EOF
           <!doctype html>
           <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
