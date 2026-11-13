@@ -49,6 +49,41 @@ class DefaultServerStoreTest {
         assertEquals(ServerProfile("Frigate server", "https://old.example.com"), DefaultServerStore(preferences).load())
     }
 
+    @Test
+    fun homeNetworksAreStoredUnderTheirOwnKeys() {
+        val preferences = InMemoryPreferences()
+        DefaultServerStore(preferences).save(
+            ServerProfile("Home", "https://a", homeNetworks = listOf(HomeNetwork("Home WiFi"), HomeNetwork("Cabin", "aa:bb:cc:dd:ee:ff"))),
+        )
+
+        assertEquals(
+            """[{"ssid":"Home WiFi"},{"ssid":"Cabin","bssid":"aa:bb:cc:dd:ee:ff"}]""",
+            preferences.get("home_networks"),
+        )
+    }
+
+    @Test
+    fun homeNetworksSavedByReleasesUpTo002StillLoad() {
+        // v0.0.1 and v0.0.2 were shrunk by R8, and Gson wrote the renamed fields: `a` is the SSID, `b` the BSSID.
+        val preferences = InMemoryPreferences()
+        preferences.put("default_server_url", "https://a")
+        preferences.put("home_networks", """[{"a":"Home WiFi"},{"a":"Cabin","b":"aa:bb:cc:dd:ee:ff"}]""")
+
+        assertEquals(
+            listOf(HomeNetwork("Home WiFi"), HomeNetwork("Cabin", "aa:bb:cc:dd:ee:ff")),
+            DefaultServerStore(preferences).load()?.homeNetworks,
+        )
+    }
+
+    @Test
+    fun homeNetworkWithoutNameIsSkipped() {
+        val preferences = InMemoryPreferences()
+        preferences.put("default_server_url", "https://a")
+        preferences.put("home_networks", """[{"bssid":"aa:bb:cc:dd:ee:ff"},{"x":1},7,{"ssid":"Home WiFi"}]""")
+
+        assertEquals(listOf(HomeNetwork("Home WiFi")), DefaultServerStore(preferences).load()?.homeNetworks)
+    }
+
     private class InMemoryPreferences : ServerPreferences {
         private val values = mutableMapOf<String, String>()
         override fun get(key: String): String? = values[key]
